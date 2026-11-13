@@ -31,7 +31,7 @@ export const initialCampaigns: Campaign[] = [
     verifiedViews: 645400,
     approvedClips: 38,
     activeCreators: 19,
-    discordInviteUrl: "https://discord.gg/collabefy-cursor",
+    discordInviteUrl: "https://discord.gg/QmGayUXXD",
     discordChannelName: "#campaign-cursor-ai",
     leaderboardEnabled: true,
     brief: {
@@ -153,7 +153,7 @@ export const initialCampaigns: Campaign[] = [
     verifiedViews: 1535000,
     approvedClips: 52,
     activeCreators: 28,
-    discordInviteUrl: "https://discord.gg/collabefy-arc",
+    discordInviteUrl: "https://discord.gg/QmGayUXXD",
     discordChannelName: "#campaign-arc-windows",
     leaderboardEnabled: true,
     brief: {
@@ -223,7 +223,7 @@ export const initialCampaigns: Campaign[] = [
     verifiedViews: 342300,
     approvedClips: 24,
     activeCreators: 16,
-    discordInviteUrl: "https://discord.gg/collabefy-perplexity",
+    discordInviteUrl: "https://discord.gg/QmGayUXXD",
     discordChannelName: "#campaign-perplexity",
     leaderboardEnabled: true,
     brief: {
@@ -278,7 +278,7 @@ export const initialCampaigns: Campaign[] = [
     verifiedViews: 466000,
     approvedClips: 29,
     activeCreators: 15,
-    discordInviteUrl: "https://discord.gg/collabefy-supabase",
+    discordInviteUrl: "https://discord.gg/QmGayUXXD",
     discordChannelName: "#campaign-supabase-vector",
     leaderboardEnabled: true,
     brief: {
@@ -321,7 +321,7 @@ export const initialCampaigns: Campaign[] = [
     verifiedViews: 470000,
     approvedClips: 31,
     activeCreators: 21,
-    discordInviteUrl: "https://discord.gg/collabefy-raycast",
+    discordInviteUrl: "https://discord.gg/QmGayUXXD",
     discordChannelName: "#campaign-raycast",
     leaderboardEnabled: true,
     brief: {
@@ -364,7 +364,7 @@ export const initialCampaigns: Campaign[] = [
     verifiedViews: 0,
     approvedClips: 0,
     activeCreators: 0,
-    discordInviteUrl: "https://discord.gg/collabefy-linear",
+    discordInviteUrl: "https://discord.gg/QmGayUXXD",
     discordChannelName: "#campaign-linear-mobile",
     leaderboardEnabled: true,
     brief: {
@@ -407,7 +407,7 @@ export const initialCampaigns: Campaign[] = [
     verifiedViews: 952000,
     approvedClips: 44,
     activeCreators: 26,
-    discordInviteUrl: "https://discord.gg/collabefy-resend",
+    discordInviteUrl: "https://discord.gg/QmGayUXXD",
     discordChannelName: "#campaign-resend",
     leaderboardEnabled: true,
     brief: {

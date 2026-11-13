@@ -37,7 +37,7 @@ export default function NewCampaignPage() {
     verifiedViews: 0,
     approvedClips: 0,
     activeCreators: 0,
-    discordInviteUrl: "https://discord.gg/collabefy",
+    discordInviteUrl: "https://discord.gg/QmGayUXXD",
     discordChannelName: "#campaign-new",
     leaderboardEnabled: true,
     brief: {

@@ -32,7 +32,7 @@ export const siteConfig: SiteConfig = {
   supportEmail: "support@collabefy.com",
   legalEntity: "Collabefy Technologies Inc.",
   links: {
-    discord: "https://discord.gg/collabefy",
+    discord: "https://discord.gg/QmGayUXXD",
     twitter: "https://x.com/collabefy",
     github: "https://github.com/collabefy",
     documentation: "https://docs.collabefy.com",
