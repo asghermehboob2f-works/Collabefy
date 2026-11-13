@@ -1,0 +1,171 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  // URL is provided via prisma/config.ts
+}
+
+model User {
+  id                     String    @id @default(cuid())
+  email                  String    @unique
+  passwordHash           String
+  role                   Role      @default(VISITOR)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  creatorProfile         CreatorProfile?
+  // relations
+  campaigns              Campaign[]           @relation("CreatorCampaigns")
+  campaignApplications   CampaignApplication[] // opposite side of applications
+  submissions            Submission[]
+  auditLogs              AdminAuditLog[]
+  supportTickets         SupportTicket[]
+  notifications          Notification[]
+}
+
+model CreatorProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  displayName String
+  avatarUrl   String?
+  bio         String?
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model Campaign {
+  id                String   @id @default(cuid())
+  title             String
+  slug              String   @unique
+  description       String
+  brandName         String
+  brandLogoUrl      String?
+  posterUrl         String?
+  category          String
+  platforms         Json    // array of platform identifiers stored as JSON
+  rewardRateCpm     Float
+  totalBudget       Float
+  claimedBudget     Float    @default(0)
+  status            CampaignStatus @default(DRAFT)
+  startDate         DateTime?
+  endDate           DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  creatorId         String?
+  creator           User?    @relation("CreatorCampaigns", fields: [creatorId], references: [id])
+  applications      CampaignApplication[]
+  submissions       Submission[]
+}
+
+enum CampaignStatus {
+  DRAFT
+  UPCOMING
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ARCHIVED
+}
+
+model CampaignApplication {
+  id          String   @id @default(cuid())
+  userId      String
+  campaignId  String
+  appliedAt   DateTime @default(now())
+  status      ApplicationStatus @default(PENDING)
+  user        User     @relation(fields: [userId], references: [id])
+  campaign    Campaign @relation(fields: [campaignId], references: [id])
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Submission {
+  id                String   @id @default(cuid())
+  userId            String
+  campaignId        String
+  contentUrl        String
+  platform          String
+  viewsVerified     Int      @default(0)
+  status            SubmissionStatus @default(PENDING)
+  submittedAt       DateTime @default(now())
+  user              User     @relation(fields: [userId], references: [id])
+  campaign          Campaign @relation(fields: [campaignId], references: [id])
+  verification      VerificationRecord?
+  reward            RewardRecord?
+}
+
+enum SubmissionStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+model VerificationRecord {
+  id            String   @id @default(cuid())
+  submissionId  String   @unique
+  verifiedAt    DateTime @default(now())
+  verifiedViews Int
+  submission    Submission @relation(fields: [submissionId], references: [id])
+}
+
+model RewardRecord {
+  id            String   @id @default(cuid())
+  submissionId  String   @unique
+  amount        Float
+  paidOut       Boolean @default(false)
+  payoutId      String?
+  submission    Submission @relation(fields: [submissionId], references: [id])
+  payout        Payout?   @relation(fields: [payoutId], references: [id])
+}
+
+model Payout {
+  id          String   @id @default(cuid())
+  creatorId   String
+  totalAmount Float
+  createdAt   DateTime @default(now())
+  rewards     RewardRecord[]
+}
+
+model AdminAuditLog {
+  id        String   @id @default(cuid())
+  adminId   String
+  action    String
+  targetId  String?
+  timestamp DateTime @default(now())
+  admin     User     @relation(fields: [adminId], references: [id])
+}
+
+model SupportTicket {
+  id          String   @id @default(cuid())
+  userId      String
+  subject     String
+  description String
+  status      TicketStatus @default(OPEN)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User @relation(fields: [userId], references: [id])
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  message   String
+  read      Boolean @default(false)
+  createdAt DateTime @default(now())
+  user      User @relation(fields: [userId], references: [id])
+}
+
+enum Role {
+  VISITOR
+  CREATOR
+  ADMIN
+}
