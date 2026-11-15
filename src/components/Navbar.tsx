@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { siteConfig } from "@/site.config";
-import { Menu, X, ShieldCheck, User as UserIcon, ArrowRight, LifeBuoy } from "lucide-react";
+import { Menu, X, User as UserIcon, ArrowRight, ShieldAlert } from "lucide-react";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -13,13 +13,15 @@ export function Navbar() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if user is logged in from client storage or session
     if (typeof window !== "undefined") {
       const storedRole = localStorage.getItem("collabefy_role");
       const storedEmail = localStorage.getItem("collabefy_email");
       if (storedRole) {
         setUserRole(storedRole);
         setUserEmail(storedEmail || "creator@collabefy.com");
+      } else {
+        setUserRole(null);
+        setUserEmail(null);
       }
     }
   }, [pathname]);
@@ -29,6 +31,8 @@ export function Navbar() {
     { label: "Campaigns", href: "/campaigns" },
     { label: "Support", href: "/contact" },
   ];
+
+  const isAdmin = userRole === "admin" || userRole === "ADMIN";
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-bg/95 backdrop-blur-md transition-colors">
@@ -70,17 +74,19 @@ export function Navbar() {
 
         {/* Right CTA Actions */}
         <div className="hidden md:flex items-center gap-3">
-          <Link
-            href="/admin"
-            className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-text-subtle hover:text-text hover:bg-surface-2 transition-colors border border-transparent hover:border-border"
-            title="Administrator Portal"
-          >
-            <ShieldCheck className="w-3.5 h-3.5 text-accent" />
-            <span>Admin</span>
-          </Link>
-
           {userRole ? (
             <div className="flex items-center gap-2">
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  className="flex items-center gap-1.5 rounded-md border border-accent/30 bg-accent/10 px-2.5 py-1.5 text-xs font-semibold text-accent hover:bg-accent/20 transition-colors"
+                  title="Administrative Workspace"
+                >
+                  <ShieldAlert className="w-3.5 h-3.5" />
+                  <span>Admin Workspace</span>
+                </Link>
+              )}
+
               <Link
                 href="/profile"
                 className="flex items-center gap-2 rounded-md border border-border bg-surface-2 px-3 py-1.5 text-xs font-medium text-text hover:border-border-strong hover:bg-surface-3 transition-colors"
@@ -141,14 +147,16 @@ export function Navbar() {
                 {link.label}
               </Link>
             ))}
-            <Link
-              href="/admin"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-2 text-base font-medium text-text-muted hover:text-text py-1"
-            >
-              <ShieldCheck className="w-4 h-4 text-accent" />
-              <span>Admin Dashboard</span>
-            </Link>
+            {isAdmin && (
+              <Link
+                href="/admin"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 text-base font-medium text-accent py-1"
+              >
+                <ShieldAlert className="w-4 h-4" />
+                <span>Admin Workspace</span>
+              </Link>
+            )}
             <Link
               href="/profile"
               onClick={() => setMobileMenuOpen(false)}
@@ -159,20 +167,38 @@ export function Navbar() {
             </Link>
           </nav>
           <div className="pt-4 border-t border-border flex flex-col gap-2.5">
-            <Link
-              href="/login"
-              onClick={() => setMobileMenuOpen(false)}
-              className="w-full text-center py-2.5 text-sm font-medium rounded-md border border-border text-text hover:bg-surface-2"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/register"
-              onClick={() => setMobileMenuOpen(false)}
-              className="w-full text-center py-2.5 text-sm font-semibold rounded-md bg-accent text-accent-ink hover:opacity-95"
-            >
-              Join as Creator
-            </Link>
+            {userRole ? (
+              <button
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    localStorage.removeItem("collabefy_role");
+                    localStorage.removeItem("collabefy_email");
+                    setUserRole(null);
+                  }
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full text-center py-2.5 text-sm font-medium rounded-md border border-border text-danger hover:bg-surface-2"
+              >
+                Sign Out
+              </button>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full text-center py-2.5 text-sm font-medium rounded-md border border-border text-text hover:bg-surface-2"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/register"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full text-center py-2.5 text-sm font-semibold rounded-md bg-accent text-accent-ink hover:opacity-95"
+                >
+                  Join as Creator
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}

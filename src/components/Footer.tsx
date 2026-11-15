@@ -87,11 +87,6 @@ export function Footer() {
                   Privacy Policy
                 </Link>
               </li>
-              <li>
-                <Link href="/admin" className="hover:text-accent transition-colors text-text-subtle text-xs">
-                  Administrative Workspace
-                </Link>
-              </li>
             </ul>
           </div>
         </div>

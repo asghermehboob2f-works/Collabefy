@@ -88,3 +88,4 @@ export const campaignCreateSchema = z.object({
   discordInviteUrl: z.string().url().optional(),
   discordChannelName: z.string().optional(),
 });
+

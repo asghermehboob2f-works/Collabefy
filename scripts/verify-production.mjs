@@ -97,3 +97,4 @@ test("Campaign status prevents submissions to paused or expired campaigns", () =
   assert.strictEqual(canSubmitToCampaign("draft"), false);
   assert.strictEqual(canSubmitToCampaign("budget_exhausted"), false);
 });
+

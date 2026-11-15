@@ -20,3 +20,4 @@ export async function GET() {
     lastUpdated: new Date().toISOString(),
   });
 }
+
