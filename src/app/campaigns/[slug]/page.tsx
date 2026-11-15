@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getCampaignBySlug, getLeaderboard, initialCampaigns } from "@/lib/data";
 import { formatCurrency, formatDaysRemaining, formatDate, formatNumber } from "@/lib/utils";
 import { PlatformIcon } from "@/components/PlatformIcons";
+import { CampaignApplyModal } from "@/components/CampaignApplyModal";
 import {
   ArrowLeft,
   Share2,
@@ -52,7 +53,7 @@ export default function CampaignDetailPage({
 
   return (
     <div className="py-8 pb-24">
-      <div className="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
+      <div className="container-fluid">
         {/* Breadcrumb */}
         <div className="mb-6 flex items-center gap-2 text-xs font-mono text-text-subtle">
           <Link href="/campaigns" className="hover:text-text flex items-center gap-1">
@@ -365,19 +366,28 @@ export default function CampaignDetailPage({
                 </div>
               </div>
 
-              {/* Primary Join Action */}
-              <div className="pt-2">
+              {/* Primary Actions: Direct Web Submission & Discord Channel */}
+              <div className="pt-2 space-y-2.5">
                 {statusMap.canJoin ? (
-                  <a
-                    href={campaign.discordInviteUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full flex items-center justify-center gap-2 rounded-md bg-accent px-4 py-3 text-sm font-semibold text-accent-ink hover:opacity-95 transition-opacity shadow-sm"
-                  >
-                    <PlatformIcon platform="discord" className="w-4 h-4" />
-                    <span>Join {campaign.discordChannelName}</span>
-                    <ArrowUpRight className="w-4 h-4" />
-                  </a>
+                  <>
+                    <CampaignApplyModal
+                      campaignId={campaign.id}
+                      campaignTitle={campaign.title}
+                      rewardRate={campaign.rewardRate}
+                      platforms={campaign.platforms}
+                    />
+
+                    <a
+                      href={campaign.discordInviteUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full flex items-center justify-center gap-2 rounded-md border border-border bg-surface-2 px-4 py-2.5 text-xs font-semibold text-text hover:bg-surface-3 transition-colors"
+                    >
+                      <PlatformIcon platform="discord" className="w-4 h-4" />
+                      <span>Join {campaign.discordChannelName}</span>
+                      <ArrowUpRight className="w-3.5 h-3.5 text-text-subtle" />
+                    </a>
+                  </>
                 ) : (
                   <button
                     disabled

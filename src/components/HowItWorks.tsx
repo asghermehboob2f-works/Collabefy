@@ -36,7 +36,7 @@ export function HowItWorks() {
 
   return (
     <section className="py-20 border-b border-border">
-      <div className="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
+      <div className="container-fluid">
         <div className="max-w-2xl">
           <div className="text-xs font-mono font-semibold uppercase tracking-wider text-accent">
             Operating Model

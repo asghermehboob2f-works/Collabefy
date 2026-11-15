@@ -68,7 +68,7 @@ export default function CampaignsDirectoryPage() {
 
   return (
     <div className="py-10">
-      <div className="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
+      <div className="container-fluid">
         {/* Page Header */}
         <div className="mb-8">
           <div className="text-xs font-mono font-semibold uppercase tracking-wider text-accent">

@@ -42,7 +42,9 @@ const config: Config = {
         xl: "20px",
       },
       maxWidth: {
-        content: "1200px",
+        content: "1360px",
+        wide: "1560px",
+        ultrawide: "1800px",
       },
     },
   },

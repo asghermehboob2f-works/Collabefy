@@ -155,3 +155,20 @@ export interface PlatformStats {
   lastCalculatedAt: string;
 }
 
+export interface CreatorActivityItem {
+  id: string;
+  creatorName: string;
+  creatorHandle: string;
+  avatarUrl: string;
+  platform: PlatformType;
+  campaignTitle: string;
+  campaignSlug: string;
+  brandName: string;
+  thumbnailUrl: string;
+  verifiedViews: number;
+  rewardEarned: number;
+  status: "verified" | "reviewing" | "paid";
+  publishedAt: string;
+}
+
+

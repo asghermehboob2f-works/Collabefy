@@ -2,27 +2,27 @@ import React from "react";
 import Link from "next/link";
 import { siteConfig } from "@/site.config";
 import { PlatformIcon } from "./PlatformIcons";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Mail } from "lucide-react";
 
 export function Footer() {
   return (
-    <footer className="border-t border-border bg-surface-1/50 pt-16 pb-12 text-sm text-text-muted">
-      <div className="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-10 pb-12 border-b border-border">
+    <footer className="border-t border-border bg-surface-1/60 pt-16 pb-12 text-sm text-text-muted">
+      <div className="container-fluid">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-border">
           {/* Brand info */}
           <div className="md:col-span-2 space-y-4">
             <Link href="/" className="flex items-center gap-2.5">
-              <div className="flex h-7 w-7 items-center justify-center rounded-sm bg-accent text-accent-ink font-mono font-bold text-base">
+              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-accent text-accent-ink font-mono font-bold text-base">
                 C
               </div>
               <span className="font-semibold text-base tracking-tight text-text">
                 {siteConfig.name}
               </span>
             </Link>
-            <p className="text-sm text-text-muted max-w-sm leading-relaxed">
+            <p className="text-sm text-text-muted max-w-md leading-relaxed">
               {siteConfig.description}
             </p>
-            <div className="flex items-center gap-3 pt-2">
+            <div className="flex flex-wrap items-center gap-3 pt-1">
               <a
                 href={siteConfig.links.discord}
                 target="_blank"
@@ -33,42 +33,40 @@ export function Footer() {
                 <span>Discord Community</span>
                 <ArrowUpRight className="w-3 h-3 text-text-subtle" />
               </a>
-              <a
-                href={siteConfig.links.twitter}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 rounded-md border border-border bg-surface-2 text-text-muted hover:text-text transition-colors"
-                aria-label="X / Twitter"
+              <Link
+                href="/contact"
+                className="flex items-center gap-1.5 rounded-md border border-border bg-surface-2 px-3 py-1.5 text-xs font-medium text-text hover:border-border-strong transition-colors"
               >
-                <PlatformIcon platform="x" className="w-3.5 h-3.5" />
-              </a>
+                <Mail className="w-3.5 h-3.5 text-accent" />
+                <span>{siteConfig.supportEmail}</span>
+              </Link>
             </div>
           </div>
 
           {/* Navigation Columns */}
           <div className="space-y-3">
             <h4 className="text-xs font-mono font-semibold uppercase tracking-wider text-text">
-              Marketplace
+              Platform
             </h4>
-            <ul className="space-y-2 text-sm">
+            <ul className="space-y-2.5 text-sm">
               <li>
-                <Link href="/campaigns" className="hover:text-text transition-colors">
-                  All Campaigns
+                <Link href="/" className="hover:text-accent transition-colors">
+                  Home
                 </Link>
               </li>
               <li>
-                <Link href="/leaderboard" className="hover:text-text transition-colors">
-                  Leaderboards
+                <Link href="/campaigns" className="hover:text-accent transition-colors">
+                  Browse Campaigns
                 </Link>
               </li>
               <li>
-                <Link href="/how-it-works" className="hover:text-text transition-colors">
-                  How It Works
+                <Link href="/contact" className="hover:text-accent transition-colors">
+                  Support & Contact
                 </Link>
               </li>
               <li>
-                <Link href="/community" className="hover:text-text transition-colors">
-                  Discord Hub
+                <Link href="/profile" className="hover:text-accent transition-colors">
+                  Creator Dashboard
                 </Link>
               </li>
             </ul>
@@ -76,51 +74,23 @@ export function Footer() {
 
           <div className="space-y-3">
             <h4 className="text-xs font-mono font-semibold uppercase tracking-wider text-text">
-              Platform & Team
+              Legal & Compliance
             </h4>
-            <ul className="space-y-2 text-sm">
+            <ul className="space-y-2.5 text-sm">
               <li>
-                <Link href="/about" className="hover:text-text transition-colors">
-                  About Us
-                </Link>
-              </li>
-              <li>
-                <Link href="/faq" className="hover:text-text transition-colors">
-                  FAQ & Verification
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="hover:text-text transition-colors">
-                  Brand Sponsorships
-                </Link>
-              </li>
-              <li>
-                <Link href="/admin" className="hover:text-text transition-colors">
-                  Staff Admin
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div className="space-y-3">
-            <h4 className="text-xs font-mono font-semibold uppercase tracking-wider text-text">
-              Compliance & Legal
-            </h4>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link href="/terms" className="hover:text-text transition-colors">
+                <Link href="/terms" className="hover:text-accent transition-colors">
                   Terms of Service
                 </Link>
               </li>
               <li>
-                <Link href="/privacy" className="hover:text-text transition-colors">
+                <Link href="/privacy" className="hover:text-accent transition-colors">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <span className="text-xs text-text-subtle block pt-2">
-                  Operating Model: Discord-led manual review & weekly verified payouts.
-                </span>
+                <Link href="/admin" className="hover:text-accent transition-colors text-text-subtle text-xs">
+                  Administrative Workspace
+                </Link>
               </li>
             </ul>
           </div>
@@ -130,9 +100,9 @@ export function Footer() {
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-text-subtle">
           <div>{siteConfig.footer.copyright}</div>
           <div className="flex items-center gap-2">
-            <span className="inline-block w-2 h-2 rounded-full bg-success animate-pulse" />
+            <span className="inline-block w-2 h-2 rounded-full bg-accent animate-pulse" />
             <span className="font-mono text-text-muted">
-              Discord Bot: Operational • Payouts: Online
+              Campaign Verification Engine: Active • Payments: Audited
             </span>
           </div>
         </div>
@@ -140,4 +110,3 @@ export function Footer() {
     </footer>
   );
 }
-

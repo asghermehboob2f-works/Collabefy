@@ -4,7 +4,7 @@ import { siteConfig } from "@/site.config";
 export default function PrivacyPage() {
   return (
     <div className="py-16">
-      <div className="mx-auto max-w-content px-4 sm:px-6 lg:px-8">
+      <div className="container-fluid">
         <div className="max-w-3xl space-y-8">
           <div>
             <div className="text-xs font-mono font-semibold uppercase tracking-wider text-accent">

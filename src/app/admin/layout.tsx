@@ -11,6 +11,7 @@ import {
   Settings,
   ShieldCheck,
   ExternalLink,
+  FileCheck,
 } from "lucide-react";
 
 export default function AdminLayout({
@@ -22,6 +23,7 @@ export default function AdminLayout({
     { label: "Overview", href: "/admin", icon: LayoutDashboard },
     { label: "Campaigns", href: "/admin/campaigns", icon: Layers },
     { label: "New Campaign", href: "/admin/campaigns/new", icon: PlusCircle },
+    { label: "Submissions", href: "/admin/submissions", icon: FileCheck },
     { label: "Creators", href: "/admin/creators", icon: Users },
     { label: "Audit Log", href: "/admin/audit-log", icon: History },
     { label: "Settings", href: "/admin/settings", icon: Settings },

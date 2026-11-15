@@ -584,6 +584,73 @@ export const sampleAuditLogs: AdminAuditLog[] = [
   },
 ];
 
+export const sampleCreatorActivities: import("@/types").CreatorActivityItem[] = [
+  {
+    id: "act-1",
+    creatorName: "Alex Rivers",
+    creatorHandle: "@alex_builds",
+    avatarUrl: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
+    platform: "tiktok",
+    campaignTitle: "Cursor AI — Next-Gen Code Editor Launch",
+    campaignSlug: "cursor-ai-launch",
+    brandName: "Cursor",
+    thumbnailUrl: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=600&q=80",
+    verifiedViews: 148200,
+    rewardEarned: 3260.4,
+    status: "paid",
+    publishedAt: "2 days ago",
+  },
+  {
+    id: "act-2",
+    creatorName: "Maya Lin",
+    creatorHandle: "@codewithmaya",
+    avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=120&q=80",
+    platform: "youtube_shorts",
+    campaignTitle: "Cursor AI — Next-Gen Code Editor Launch",
+    campaignSlug: "cursor-ai-launch",
+    brandName: "Cursor",
+    thumbnailUrl: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=600&q=80",
+    verifiedViews: 112400,
+    rewardEarned: 2472.8,
+    status: "verified",
+    publishedAt: "3 days ago",
+  },
+  {
+    id: "act-3",
+    creatorName: "Kevin Vance",
+    creatorHandle: "@dev_kevin",
+    avatarUrl: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=120&q=80",
+    platform: "instagram_reels",
+    campaignTitle: "Perplexity AI — Deep Research Mode",
+    campaignSlug: "perplexity-deep-research",
+    brandName: "Perplexity",
+    thumbnailUrl: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80",
+    verifiedViews: 94800,
+    rewardEarned: 2085.6,
+    status: "paid",
+    publishedAt: "5 days ago",
+  },
+  {
+    id: "act-4",
+    creatorName: "Samira Patel",
+    creatorHandle: "@tech_sam",
+    avatarUrl: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=120&q=80",
+    platform: "tiktok",
+    campaignTitle: "Arc Browser — Windows Release & Spaces",
+    campaignSlug: "arc-browser-windows",
+    brandName: "The Browser Company",
+    thumbnailUrl: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=600&q=80",
+    verifiedViews: 68100,
+    rewardEarned: 1498.2,
+    status: "verified",
+    publishedAt: "6 days ago",
+  },
+];
+
+export function getCreatorActivities(): import("@/types").CreatorActivityItem[] {
+  return sampleCreatorActivities;
+}
+
 // In-memory data store for live sessions
 let campaignsStore: Campaign[] = [...initialCampaigns];
 let leaderboardsStore: Record<string, LeaderboardEntry[]> = { ...initialLeaderboards };

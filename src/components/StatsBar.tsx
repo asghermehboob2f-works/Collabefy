@@ -5,7 +5,7 @@ import { formatCompactNumber, formatCurrency } from "@/lib/utils";
 export function StatsBar({ stats }: { stats: PlatformStats }) {
   return (
     <div className="w-full border-y border-border bg-surface-1/40 backdrop-blur-sm">
-      <div className="mx-auto max-w-content px-4 sm:px-6 lg:px-8 py-6">
+      <div className="container-fluid py-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-0 divide-y md:divide-y-0 md:divide-x divide-border">
           {/* Ongoing Campaigns */}
           <div className="flex flex-col md:px-6 first:pl-0">

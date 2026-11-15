@@ -110,14 +110,18 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
           </div>
         )}
 
-        {/* Footer Meta Row */}
-        <div className="mt-auto pt-4 flex items-center justify-between text-xs font-mono text-text-subtle">
-          <span>{formatDaysRemaining(campaign.endDate)}</span>
-          {campaign.applicationRequired && (
-            <span className="rounded-[4px] border border-border bg-surface-2 px-1.5 py-0.5 text-[10px] text-text-muted">
-              Application Required
-            </span>
-          )}
+        {/* Footer Meta Row & Action Button */}
+        <div className="mt-auto pt-4 flex items-center justify-between gap-3 text-xs font-mono text-text-subtle">
+          <div className="flex flex-col">
+            <span className="text-text-muted">{formatDaysRemaining(campaign.endDate)}</span>
+            {campaign.applicationRequired && (
+              <span className="text-[10px] text-accent">Application Required</span>
+            )}
+          </div>
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-surface-2 group-hover:bg-accent group-hover:text-accent-ink border border-border group-hover:border-accent px-3 py-1.5 text-xs font-semibold text-text transition-all duration-200 shadow-sm">
+            <span>View Campaign</span>
+            <span className="text-xs transition-transform group-hover:translate-x-0.5">→</span>
+          </span>
         </div>
       </div>
     </Link>
