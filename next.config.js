@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Use a custom build directory to avoid OneDrive permission issues
+  distDir: 'build',
   reactStrictMode: true,
   images: {
     domains: ["images.unsplash.com", "stitch.googleapis.com", "lh3.googleusercontent.com"],
