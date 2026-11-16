@@ -4,9 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:api": "next dev -p 3001",
+    "dev:all": "npm run dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "type-check": "tsc --noEmit",
     "test": "node --test scripts/verify-production.mjs"
   },
   "dependencies": {

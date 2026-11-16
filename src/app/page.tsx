@@ -18,39 +18,54 @@ export default function HomePage() {
   return (
     <div className="flex flex-col w-full overflow-x-hidden">
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-12 pb-20 md:pt-24 md:pb-32 border-b border-border/40">
-        {/* Soft radial background glow */}
-        <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[1000px] h-[550px] bg-accent/5 rounded-full blur-[160px]" />
+      <section className="relative overflow-hidden pt-16 pb-24 md:pt-28 md:pb-36 border-b border-border/40 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-accent/8 via-bg to-bg">
+        {/* Decorative background grid */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage:
+              "linear-gradient(var(--color-border,#333) 1px, transparent 1px), linear-gradient(90deg, var(--color-border,#333) 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
+          }}
+        />
+        {/* Soft radial glow */}
+        <div className="pointer-events-none absolute -top-48 left-1/2 -translate-x-1/2 w-[1100px] h-[600px] bg-accent/10 rounded-full blur-[180px]" />
+        {/* Secondary accent orb */}
+        <div className="pointer-events-none absolute top-1/2 -right-64 w-[500px] h-[500px] bg-lime-400/5 rounded-full blur-[120px]" />
 
-        <div className="container-fluid">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-12 items-center">
+        <div className="container-fluid relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
             {/* Left Headline Block */}
-            <div className="lg:col-span-7 space-y-6">
-              {/* Trust Badge */}
-              <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-1 px-3.5 py-1.5 text-xs font-mono text-text-muted">
-                <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-                <span>Verified Creator Campaign Marketplace</span>
+            <div className="lg:col-span-7 space-y-7">
+
+              {/* Animated live badge */}
+              <div className="inline-flex items-center gap-2.5 rounded-full border border-accent/25 bg-accent/8 px-4 py-1.5 text-xs font-mono font-medium text-accent shadow-sm">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+                </span>
+                <span>Verified Campaign Platform</span>
               </div>
 
               {/* Display Headline */}
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-[-0.03em] leading-[1.08] text-text">
+              <h1 className="text-4xl sm:text-5xl lg:text-[3.75rem] xl:text-[4.25rem] font-bold tracking-[-0.04em] leading-[1.06] text-text">
                 Turn your content into{" "}
-                <span className="text-accent underline decoration-accent/40 underline-offset-8">
-                  opportunities
+                <span className="bg-gradient-to-r from-accent to-lime-300 bg-clip-text text-transparent">
+                  revenue
                 </span>
                 .
               </h1>
 
               {/* Supporting narrative */}
-              <p className="text-base sm:text-lg text-text-muted max-w-2xl leading-relaxed">
+              <p className="text-base sm:text-lg text-text-muted max-w-xl leading-relaxed">
                 Discover creator campaigns, understand the rewards upfront, publish authentic content and earn based on verified performance.
               </p>
 
               {/* CTAs */}
-              <div className="flex flex-wrap items-center gap-4 pt-2">
+              <div className="flex flex-wrap items-center gap-4 pt-1">
                 <Link
                   href="/campaigns"
-                  className="flex items-center gap-2 rounded-md bg-accent px-6 py-3.5 text-sm font-semibold text-accent-ink hover:opacity-95 transition-all shadow-md hover:scale-[1.01]"
+                  className="flex items-center gap-2 rounded-lg bg-accent px-6 py-3.5 text-sm font-semibold text-accent-ink hover:opacity-90 transition-all shadow-lg shadow-accent/20 hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <span>Browse Campaigns</span>
                   <ArrowRight className="w-4 h-4" />
@@ -58,7 +73,7 @@ export default function HomePage() {
 
                 <Link
                   href="/register"
-                  className="flex items-center gap-2 rounded-md border border-border bg-surface-2 px-6 py-3.5 text-sm font-medium text-text hover:border-border-strong hover:bg-surface-3 transition-colors"
+                  className="flex items-center gap-2 rounded-lg border border-border bg-surface-1/60 backdrop-blur-sm px-6 py-3.5 text-sm font-medium text-text hover:border-accent/40 hover:bg-surface-2 transition-all"
                 >
                   <UserPlus className="w-4 h-4 text-accent" />
                   <span>Join as Creator</span>
@@ -66,19 +81,31 @@ export default function HomePage() {
               </div>
 
               {/* Micro-trust indicators */}
-              <div className="pt-4 flex flex-wrap items-center gap-6 text-xs font-mono text-text-subtle">
+              <div className="pt-2 flex flex-wrap items-center gap-5 text-xs font-mono text-text-subtle">
                 <div className="flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-accent" />
-                  <span>Transparent CPM & Rules</span>
+                  <ShieldCheck className="w-3.5 h-3.5 text-accent" />
+                  <span>Transparent CPM &amp; Rules</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Eye className="w-4 h-4 text-accent" />
+                  <Eye className="w-3.5 h-3.5 text-accent" />
                   <span>Verified 48h Organic View Audits</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Zap className="w-4 h-4 text-accent" />
+                  <Zap className="w-3.5 h-3.5 text-accent" />
                   <span>Direct Weekly Creator Payouts</span>
                 </div>
+              </div>
+
+              {/* Social proof row */}
+              <div className="flex items-center gap-3 pt-1">
+                <div className="flex -space-x-2">
+                  <div className="w-7 h-7 rounded-full border-2 border-bg bg-gradient-to-br from-purple-400 to-indigo-500 flex items-center justify-center text-[10px] font-bold text-white">A</div>
+                  <div className="w-7 h-7 rounded-full border-2 border-bg bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-[10px] font-bold text-white">M</div>
+                  <div className="w-7 h-7 rounded-full border-2 border-bg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-[10px] font-bold text-white">J</div>
+                </div>
+                <p className="text-xs text-text-muted font-medium">
+                  <span className="text-text font-semibold">2,400+</span> creators earning this week
+                </p>
               </div>
             </div>
 
@@ -135,7 +162,7 @@ export default function HomePage() {
                 Live Creator Feed
               </div>
               <h2 className="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight text-text">
-                Recent Creator Activity & Published Work
+                Recent Creator Activity &amp; Published Work
               </h2>
               <p className="mt-1.5 text-sm text-text-muted">
                 Real creator submissions audited through Collabefy verification with confirmed view performance.

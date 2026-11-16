@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { siteConfig } from "@/site.config";
 import {
   LayoutDashboard,
@@ -25,7 +25,9 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean | null>(null);
+  const [adminEmail, setAdminEmail] = useState<string>("");
 
   useEffect(() => {
     // If on /admin/login, bypass the layout guard
@@ -37,13 +39,16 @@ export default function AdminLayout({
     if (typeof window !== "undefined") {
       const role = localStorage.getItem("collabefy_role");
       const adminToken = localStorage.getItem("collabefy_admin_token");
+      const email = localStorage.getItem("collabefy_email") ?? "";
       if ((role === "admin" || role === "ADMIN") && adminToken) {
+        setAdminEmail(email);
         setIsAdminAuthenticated(true);
       } else {
-        setIsAdminAuthenticated(false);
+        // Redirect immediately instead of showing a 403 page
+        router.replace(`/admin/login?redirect=${encodeURIComponent(pathname)}`);
       }
     }
-  }, [pathname]);
+  }, [pathname, router]);
 
   const handleSignOut = () => {
     if (typeof window !== "undefined") {

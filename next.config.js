@@ -3,6 +3,14 @@ const nextConfig = {
   // Use a custom build directory to avoid OneDrive permission issues
   distDir: 'build',
   reactStrictMode: true,
+  poweredByHeader: false,
+  compress: true,
+  generateEtags: true,
+  experimental: {
+    serverActions: {
+      allowedOrigins: ['localhost:3000', 'collabefy.com'],
+    },
+  },
   images: {
     domains: ["images.unsplash.com", "stitch.googleapis.com", "lh3.googleusercontent.com"],
   },
