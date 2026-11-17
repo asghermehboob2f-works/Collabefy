@@ -11,7 +11,7 @@ export function createRateLimiter(options: RateLimitOptions) {
   const requests = new Map<string, number[]>();
 
   // Cleanup old records periodically
-  setInterval(() => {
+  const cleanupTimer = setInterval(() => {
     const now = Date.now();
     requests.forEach((timestamps, ip) => {
       const validTimestamps = timestamps.filter((t) => now - t < windowMs);
@@ -22,6 +22,7 @@ export function createRateLimiter(options: RateLimitOptions) {
       }
     });
   }, windowMs);
+  cleanupTimer.unref(); // Allow Node process to exit cleanly without keeping event loop alive
 
   return (req: Request, res: Response, next: NextFunction): void => {
     const ip = (req.headers["x-forwarded-for"] as string) || req.socket.remoteAddress || "unknown";

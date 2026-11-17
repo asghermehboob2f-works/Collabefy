@@ -3,7 +3,7 @@
 import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ShieldAlert, Lock, Key, ArrowRight, AlertTriangle, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { ShieldAlert, Lock, ArrowRight, AlertTriangle, ArrowLeft, Eye, EyeOff } from "lucide-react";
 
 export default function AdminLoginPage() {
   return (
@@ -19,9 +19,7 @@ function AdminLoginForm() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [securityKey, setSecurityKey] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [showKey, setShowKey] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [attempts, setAttempts] = useState(0);
@@ -30,7 +28,6 @@ function AdminLoginForm() {
     e.preventDefault();
     setError(null);
 
-    // Block after 5 client-side attempts
     if (attempts >= 5) {
       setError("Too many failed attempts. Please wait before trying again.");
       return;
@@ -39,16 +36,15 @@ function AdminLoginForm() {
     setIsAuthenticating(true);
 
     try {
-      // POST to the secure backend API route — credentials checked server-side
+      // POST to the secure admin API route — checks against backend DB and environment credentials
       const res = await fetch("/api/auth/admin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, securityKey }),
+        body: JSON.stringify({ email: email.trim(), password }),
       });
 
       if (res.ok) {
         const authData = await res.json().catch(() => ({}));
-        // Store session token and role
         if (typeof window !== "undefined") {
           localStorage.setItem("collabefy_role", authData.user?.role?.toLowerCase() || "admin");
           localStorage.setItem("collabefy_admin_token", authData.token || `adm_${Date.now()}`);
@@ -101,14 +97,14 @@ function AdminLoginForm() {
             Administrative Portal
           </h1>
           <p className="text-xs text-text-muted max-w-sm mx-auto leading-relaxed">
-            Authorized operations personnel only. All login attempts are monitored and recorded.
+            Authorized platform personnel only. Sign in with your administrator ID and password configured in your environment.
           </p>
         </div>
 
         {/* Security Info Bar */}
         <div className="rounded-lg border border-border bg-surface-2/60 px-4 py-3 flex items-center gap-3 text-xs font-mono">
           <Lock className="w-3.5 h-3.5 text-accent shrink-0" />
-          <span className="text-text-subtle">Staff Security Clearance Required • 3-Factor Auth</span>
+          <span className="text-text-subtle">Environment Protected Credentials</span>
           <span className="ml-auto text-[10px] text-text-subtle bg-surface-3 px-1.5 py-0.5 rounded border border-border">
             TLS 1.3
           </span>
@@ -130,18 +126,18 @@ function AdminLoginForm() {
           )}
 
           <form onSubmit={handleAdminAuth} className="space-y-4">
-            {/* Email */}
+            {/* Admin ID / Email */}
             <div>
               <label className="text-xs font-mono text-text-subtle uppercase block mb-1.5">
-                Staff Email Address
+                Administrator ID / Email
               </label>
               <input
-                type="email"
+                type="text"
                 required
                 autoComplete="username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="staff@collabefy.com"
+                placeholder="admin@collabefy.com"
                 className="w-full rounded-md border border-border bg-surface-2 px-3.5 py-2.5 text-sm text-text placeholder:text-text-subtle focus:border-danger focus:outline-none font-mono"
               />
             </div>
@@ -149,7 +145,7 @@ function AdminLoginForm() {
             {/* Password */}
             <div>
               <label className="text-xs font-mono text-text-subtle uppercase block mb-1.5">
-                Master Password
+                Password
               </label>
               <div className="relative">
                 <input
@@ -172,42 +168,12 @@ function AdminLoginForm() {
               </div>
             </div>
 
-            {/* Security Key */}
-            <div>
-              <label className="text-xs font-mono text-text-subtle uppercase block mb-1.5">
-                Security Clearance Key
-              </label>
-              <div className="relative">
-                <Key className="w-4 h-4 text-text-subtle absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type={showKey ? "text" : "password"}
-                  required
-                  autoComplete="off"
-                  value={securityKey}
-                  onChange={(e) => setSecurityKey(e.target.value)}
-                  placeholder="Enter your daily passkey"
-                  className="w-full rounded-md border border-border bg-surface-2 py-2.5 pl-9 pr-10 text-sm text-text placeholder:text-text-subtle focus:border-danger focus:outline-none font-mono"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowKey((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-subtle hover:text-text"
-                  tabIndex={-1}
-                >
-                  {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              <p className="text-[10px] font-mono text-text-subtle mt-1.5">
-                Contact DevSecOps for your current daily staff passkey.
-              </p>
-            </div>
-
             <button
               type="submit"
               disabled={isAuthenticating || attempts >= 5}
               className="w-full flex items-center justify-center gap-2 rounded-md bg-accent px-4 py-3 text-sm font-semibold text-accent-ink hover:opacity-95 transition-opacity disabled:opacity-50 shadow-md"
             >
-              <span>{isAuthenticating ? "Verifying Credentials..." : "Authenticate & Enter Workspace"}</span>
+              <span>{isAuthenticating ? "Verifying Credentials..." : "Sign In to Admin Portal"}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
@@ -224,7 +190,7 @@ function AdminLoginForm() {
         </div>
 
         <p className="text-center text-[10px] font-mono text-text-subtle">
-          Unauthorized access is a violation of platform policy and may be prosecuted.
+          Credentials can be modified anytime in your project&apos;s <code className="text-accent">.env</code> file.
         </p>
       </div>
     </div>

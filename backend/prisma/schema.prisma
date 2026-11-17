@@ -7,12 +7,95 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  CAMPAIGN_MANAGER
+  FINANCE_MANAGER
+  SUPPORT_MANAGER
+  BRAND
+  CREATOR
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING_VERIFICATION
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ARCHIVED
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum SubmissionStatus {
+  PENDING
+  VERIFYING
+  VERIFIED
+  REJECTED
+  FLAGGED
+}
+
+enum LedgerType {
+  REWARD_CREDIT
+  WITHDRAWAL_DEBIT
+  ADJUSTMENT
+  REFUND
+}
+
+enum WithdrawalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PROCESSED
+  FAILED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_USER
+  RESOLVED
+  CLOSED
+}
+
+enum NotificationType {
+  SYSTEM
+  CAMPAIGN
+  PAYMENT
+  VERIFICATION
+  SUPPORT
+}
+
+enum AnnouncementStatus {
+  DRAFT
+  SCHEDULED
+  SENT
+}
+
 model User {
   id               String       @id @default(cuid())
   email            String       @unique
   passwordHash     String
-  role             String       @default("CREATOR") // SUPER_ADMIN, ADMIN, CAMPAIGN_MANAGER, FINANCE_MANAGER, SUPPORT_MANAGER, BRAND, CREATOR
-  status           String       @default("ACTIVE")  // ACTIVE, SUSPENDED, PENDING_VERIFICATION
+  role             Role         @default(CREATOR)
+  status           UserStatus   @default(ACTIVE)
   isEmailVerified  Boolean      @default(false)
   twoFactorEnabled Boolean      @default(false)
   twoFactorSecret  String?
@@ -52,7 +135,7 @@ model AdminProfile {
   id          String   @id @default(cuid())
   userId      String   @unique
   department  String?
-  permissions String   @default("[]") // JSON string of granular permissions
+  permissions String   @default("[]") // JSON string of specific granular permissions
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -108,7 +191,7 @@ model Campaign {
   allocatedBudget Float          @default(0)
   rewardRateCpm   Float
   rewardUnit      String         @default("per_1000_views")
-  status          String         @default("DRAFT") // DRAFT, SCHEDULED, ACTIVE, PAUSED, COMPLETED, ARCHIVED
+  status          CampaignStatus @default(DRAFT)
   startDate       DateTime?
   endDate         DateTime?
   platforms       String         @default("[]") // JSON array
@@ -133,7 +216,7 @@ model CampaignApplication {
   id            String            @id @default(cuid())
   campaignId    String
   creatorId     String
-  status        String            @default("PENDING") // PENDING, APPROVED, REJECTED
+  status        ApplicationStatus @default(PENDING)
   pitchText     String?
   internalNotes String?
   appliedAt     DateTime          @default(now())
@@ -152,7 +235,7 @@ model ContentSubmission {
   creatorId       String
   platform        String
   contentUrl      String
-  status          String           @default("PENDING") // PENDING, VERIFYING, VERIFIED, REJECTED, FLAGGED
+  status          SubmissionStatus @default(PENDING)
   reportedViews   Int              @default(0)
   verifiedViews   Int              @default(0)
   rewardAmount    Float            @default(0)
@@ -173,7 +256,7 @@ model EarningsLedger {
   submissionId String?
   campaignId   String?
   amount       Float
-  type         String            // REWARD_CREDIT, WITHDRAWAL_DEBIT, ADJUSTMENT, REFUND
+  type         LedgerType
   balanceAfter Float
   referenceId  String?           @unique
   description  String?
@@ -191,7 +274,7 @@ model WithdrawalRequest {
   currency             String           @default("USD")
   paymentMethod        String           @default("STRIPE")
   destinationDetails   String           // JSON string e.g. bank or wallet
-  status               String           @default("PENDING") // PENDING, APPROVED, REJECTED, PROCESSED, FAILED
+  status               WithdrawalStatus @default(PENDING)
   transactionReference String?
   approvedBy           String?
   failureReason        String?
@@ -206,8 +289,8 @@ model SupportTicket {
   userId          String
   subject         String
   category        String           @default("GENERAL")
-  priority        String           @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
-  status          String           @default("OPEN")   // OPEN, IN_PROGRESS, WAITING_USER, RESOLVED, CLOSED
+  priority        TicketPriority   @default(MEDIUM)
+  status          TicketStatus     @default(OPEN)
   assignedAgentId String?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
@@ -234,7 +317,7 @@ model Notification {
   userId    String
   title     String
   message   String
-  type      String           @default("SYSTEM") // SYSTEM, CAMPAIGN, PAYMENT, VERIFICATION, SUPPORT
+  type      NotificationType @default(SYSTEM)
   link      String?
   isRead    Boolean          @default(false)
   createdAt DateTime         @default(now())
@@ -249,7 +332,7 @@ model Announcement {
   targetRole   String             @default("ALL")
   scheduledFor DateTime?
   sentAt       DateTime?
-  status       String             @default("DRAFT") // DRAFT, SCHEDULED, SENT
+  status       AnnouncementStatus @default(DRAFT)
   createdBy    String
   createdAt    DateTime           @default(now())
 }
@@ -291,3 +374,4 @@ model AdminAuditLog {
 
   admin          User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
 }
+

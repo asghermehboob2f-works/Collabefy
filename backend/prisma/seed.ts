@@ -6,17 +6,24 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🌱 Seeding Collabefy Production Database...");
 
-  const adminPasswordHash = await bcrypt.hash("CollabefyAdmin2026!", 12);
+  const adminEmail = process.env.ADMIN_EMAIL || process.env.ADMIN_ID || "admin@collabefy.com";
+  const adminPassword = process.env.ADMIN_PASSWORD || "CollabefyAdmin2026!";
+
+  const adminPasswordHash = await bcrypt.hash(adminPassword, 12);
   const managerPasswordHash = await bcrypt.hash("CollabefyManager2026!", 12);
   const creatorPasswordHash = await bcrypt.hash("CreatorPass2026!", 12);
   const brandPasswordHash = await bcrypt.hash("BrandPass2026!", 12);
 
   // 1. Super Admin
   const superAdmin = await prisma.user.upsert({
-    where: { email: "admin@collabefy.com" },
-    update: {},
+    where: { email: adminEmail.toLowerCase() },
+    update: {
+      passwordHash: adminPasswordHash,
+      role: "SUPER_ADMIN",
+      status: "ACTIVE",
+    },
     create: {
-      email: "admin@collabefy.com",
+      email: adminEmail.toLowerCase(),
       passwordHash: adminPasswordHash,
       role: "SUPER_ADMIN",
       status: "ACTIVE",

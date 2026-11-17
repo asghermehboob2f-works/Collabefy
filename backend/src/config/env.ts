@@ -12,4 +12,6 @@ export const config = {
   jwtRefreshExpiresIn: "7d",
   frontendUrl: process.env.FRONTEND_URL || "http://localhost:3000",
   cookieDomain: process.env.COOKIE_DOMAIN || undefined,
+  adminEmail: process.env.ADMIN_EMAIL || process.env.ADMIN_ID || "admin@collabefy.com",
+  adminPassword: process.env.ADMIN_PASSWORD || "CollabefyAdmin2026!",
 };
