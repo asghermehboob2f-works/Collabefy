@@ -2,9 +2,26 @@ import React from "react";
 import { getAllLeaderboards } from "@/lib/data";
 import { formatCurrency, formatNumber } from "@/lib/utils";
 import { ShieldCheck, Trophy, Sparkles } from "lucide-react";
+import { LeaderboardEntry } from "@/types";
 
-export default function LeaderboardsPage() {
-  const allEntries = getAllLeaderboards();
+async function getLeaderboardData(): Promise<LeaderboardEntry[]> {
+  const backendUrl = process.env.BACKEND_INTERNAL_URL || "http://localhost:4000";
+  try {
+    const res = await fetch(`${backendUrl}/api/v1/creators/leaderboard`, {
+      next: { revalidate: 30 },
+    });
+    if (res.ok) {
+      const json = await res.json();
+      if (json?.data && json.data.length > 0) {
+        return json.data as LeaderboardEntry[];
+      }
+    }
+  } catch {}
+  return getAllLeaderboards();
+}
+
+export default async function LeaderboardsPage() {
+  const allEntries = await getLeaderboardData();
 
   return (
     <div className="py-12">

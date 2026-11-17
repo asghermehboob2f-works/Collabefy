@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { prisma } from "../database/prisma.js";
 import { campaignCreateSchema, campaignUpdateSchema } from "../validators/campaign.validator.js";
 import { logAdminActivity } from "../middleware/auditLogger.js";
@@ -143,8 +143,9 @@ export async function getAdminCampaigns(req: Request, res: Response): Promise<vo
 }
 
 // Admin: Create Campaign
-export async function createAdminCampaign(req: Request, res: Response): Promise<void> {
-  const data = campaignCreateSchema.parse(req.body);
+export async function createAdminCampaign(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const data = campaignCreateSchema.parse(req.body);
 
   const slug =
     data.slug ||
@@ -200,12 +201,16 @@ export async function createAdminCampaign(req: Request, res: Response): Promise<
   }
 
   res.status(201).json({ success: true, data: formatCampaign(campaign) });
+  } catch (err) {
+    next(err);
+  }
 }
 
 // Admin: Update Campaign
-export async function updateAdminCampaign(req: Request, res: Response): Promise<void> {
-  const { id } = req.params;
-  const data = campaignUpdateSchema.parse(req.body);
+export async function updateAdminCampaign(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { id } = req.params;
+    const data = campaignUpdateSchema.parse(req.body);
 
   const previous = await prisma.campaign.findUnique({ where: { id } });
   if (!previous) {
@@ -239,6 +244,9 @@ export async function updateAdminCampaign(req: Request, res: Response): Promise<
   }
 
   res.json({ success: true, data: formatCampaign(updated) });
+  } catch (err) {
+    next(err);
+  }
 }
 
 // Admin: Update Campaign Status

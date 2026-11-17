@@ -38,16 +38,26 @@ export default function Navbar() {
     { label: "Support", href: "/contact" },
   ];
 
-  const isAdmin = userRole === "admin" || userRole === "ADMIN";
+  const isAdmin = ["super_admin", "admin", "campaign_manager", "finance_manager", "support_manager"].includes(
+    (userRole || "").toLowerCase()
+  );
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    try {
+      await fetch("/api/auth/admin", { method: "DELETE" });
+      await fetch("/api/v1/auth/logout", { method: "POST" });
+    } catch {}
     if (typeof window !== "undefined") {
       localStorage.removeItem("collabefy_role");
       localStorage.removeItem("collabefy_email");
+      localStorage.removeItem("collabefy_user");
+      localStorage.removeItem("collabefy_token");
+      localStorage.removeItem("collabefy_admin_token");
       setUserRole(null);
       setUserEmail(null);
     }
     setMobileMenuOpen(false);
+    window.location.href = "/";
   };
 
   return (

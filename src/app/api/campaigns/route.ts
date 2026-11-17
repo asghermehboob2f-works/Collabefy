@@ -2,8 +2,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCampaigns, createCampaign } from "@/lib/data";
 import { campaignCreateSchema, checkRateLimit, rateLimitResponse } from "@/lib/security";
 
+const BACKEND_URL = process.env.BACKEND_INTERNAL_URL || "http://localhost:4000";
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
+
+  try {
+    const backendRes = await fetch(`${BACKEND_URL}/api/v1/campaigns?${searchParams.toString()}`, {
+      cache: "no-store",
+    });
+    if (backendRes.ok) {
+      const json = await backendRes.json();
+      return NextResponse.json({
+        data: json.data,
+        count: json.data?.length || 0,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  } catch {}
+
   const status = searchParams.get("status") || "all";
   const platform = searchParams.get("platform") || "all";
   const search = searchParams.get("search") || "";

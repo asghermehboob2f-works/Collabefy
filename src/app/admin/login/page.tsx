@@ -49,8 +49,11 @@ function AdminLoginForm() {
           localStorage.setItem("collabefy_role", authData.user?.role?.toLowerCase() || "admin");
           localStorage.setItem("collabefy_admin_token", authData.token || `adm_${Date.now()}`);
           localStorage.setItem("collabefy_email", authData.user?.email || email);
+          localStorage.setItem("collabefy_user", JSON.stringify(authData.user || {}));
         }
-        window.location.href = redirectTo;
+        // Strict admin redirect: always open the genuine /admin dashboard
+        const target = redirectTo && redirectTo.startsWith("/admin") && redirectTo !== "/admin/login" ? redirectTo : "/admin";
+        window.location.href = target;
       } else {
         const data = await res.json().catch(() => ({}));
         setAttempts((prev) => prev + 1);

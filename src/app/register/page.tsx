@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { siteConfig } from "@/site.config";
-import { ArrowRight, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { ArrowRight, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -12,20 +12,52 @@ export default function RegisterPage() {
     email: "",
     password: "",
   });
+  const [error, setError] = useState<string | null>(null);
   const [registered, setRegistered] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     setRegistered(true);
 
-    if (typeof window !== "undefined") {
-      localStorage.setItem("collabefy_role", "creator");
-      localStorage.setItem("collabefy_email", formData.email);
-    }
+    try {
+      const res = await fetch("/api/v1/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          email: formData.email.trim(),
+          password: formData.password,
+          role: "CREATOR",
+          displayName: formData.name.trim(),
+          handle: formData.username.trim().toLowerCase().replace(/[^a-z0-9_]/g, ""),
+        }),
+      });
 
-    setTimeout(() => {
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setError(data?.error?.message || "Registration failed. Please check your details.");
+        setRegistered(false);
+        return;
+      }
+
+      const user = data?.data?.user;
+      const accessToken = data?.data?.accessToken;
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem("collabefy_role", "creator");
+        localStorage.setItem("collabefy_email", user?.email || formData.email);
+        localStorage.setItem("collabefy_token", accessToken);
+        localStorage.setItem("collabefy_user", JSON.stringify(user || {}));
+        localStorage.removeItem("collabefy_admin_token");
+      }
+
       window.location.href = "/profile";
-    }, 600);
+    } catch {
+      setError("Unable to connect to registration server. Please try again.");
+      setRegistered(false);
+    }
   };
 
   return (
@@ -47,6 +79,13 @@ export default function RegisterPage() {
             Monetize your content with verified brand campaigns & transparent weekly payouts
           </p>
         </div>
+
+        {error && (
+          <div className="rounded-md border border-danger/40 bg-danger/10 p-3.5 flex items-start gap-2.5 text-xs text-danger">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+            <div className="leading-relaxed">{error}</div>
+          </div>
+        )}
 
         <div className="rounded-xl border border-border bg-surface-1 p-6 sm:p-8 space-y-5 shadow-xl">
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -74,7 +113,7 @@ export default function RegisterPage() {
                 value={formData.username}
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                 placeholder="mayacodes"
-                className="w-full rounded-md border border-border bg-surface-2 px-3.5 py-2.5 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none"
+                className="w-full rounded-md border border-border bg-surface-2 px-3.5 py-2.5 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none font-mono"
               />
             </div>
 
@@ -103,7 +142,7 @@ export default function RegisterPage() {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 placeholder="Minimum 8 characters"
-                className="w-full rounded-md border border-border bg-surface-2 px-3.5 py-2.5 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none"
+                className="w-full rounded-md border border-border bg-surface-2 px-3.5 py-2.5 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none font-mono"
               />
             </div>
 

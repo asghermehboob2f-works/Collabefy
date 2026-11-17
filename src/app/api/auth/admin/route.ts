@@ -78,22 +78,18 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Set secure cookies
-    response.cookies.set("collabefy_role", user.role.toLowerCase(), {
+    // Set secure cookies for admin authentication
+    const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: "lax" as const,
       maxAge: 8 * 60 * 60,
       path: "/",
-    });
+    };
 
-    response.cookies.set("collabefy_admin_token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 8 * 60 * 60,
-      path: "/",
-    });
+    response.cookies.set("collabefy_role", user.role.toLowerCase(), cookieOptions);
+    response.cookies.set("collabefy_admin_token", token, cookieOptions);
+    response.cookies.set("collabefy_access", token, cookieOptions);
 
     return response;
   } catch (err: any) {
@@ -106,8 +102,10 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE() {
-  const response = NextResponse.json({ success: true });
+  const response = NextResponse.json({ success: true, message: "Admin session destroyed" });
   response.cookies.delete("collabefy_role");
   response.cookies.delete("collabefy_admin_token");
+  response.cookies.delete("collabefy_access");
+  response.cookies.delete("collabefy_refresh");
   return response;
 }

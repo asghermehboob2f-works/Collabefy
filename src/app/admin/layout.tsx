@@ -19,6 +19,8 @@ import {
   ShieldAlert,
 } from "lucide-react";
 
+const ALLOWED_ADMIN_ROLES = ["super_admin", "admin", "campaign_manager", "finance_manager", "support_manager"];
+
 export default function AdminLayout({
   children,
 }: {
@@ -27,7 +29,12 @@ export default function AdminLayout({
   const pathname = usePathname();
   const router = useRouter();
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean | null>(null);
-  const [adminEmail, setAdminEmail] = useState<string>("");
+  const [adminUser, setAdminUser] = useState<{ email: string; role: string; department?: string; name?: string }>({
+    email: "admin@collabefy.com",
+    role: "SUPER_ADMIN",
+    department: "Executive Management",
+    name: "Platform Administrator",
+  });
 
   useEffect(() => {
     // If on /admin/login, bypass the layout guard
@@ -37,23 +44,44 @@ export default function AdminLayout({
     }
 
     if (typeof window !== "undefined") {
-      const role = localStorage.getItem("collabefy_role");
+      const role = (localStorage.getItem("collabefy_role") || "").toLowerCase();
       const adminToken = localStorage.getItem("collabefy_admin_token");
       const email = localStorage.getItem("collabefy_email") ?? "";
-      if ((role === "admin" || role === "ADMIN") && adminToken) {
-        setAdminEmail(email);
+
+      if (ALLOWED_ADMIN_ROLES.includes(role) && adminToken) {
+        try {
+          const storedUser = JSON.parse(localStorage.getItem("collabefy_user") || "{}");
+          setAdminUser({
+            email: storedUser.email || email || "admin@collabefy.com",
+            role: storedUser.role || role.toUpperCase(),
+            department: storedUser.adminProfile?.department || storedUser.department || "Platform Staff",
+            name: storedUser.displayName || storedUser.name || (email ? email.split("@")[0].toUpperCase() : "Admin"),
+          });
+        } catch {
+          setAdminUser({
+            email: email || "admin@collabefy.com",
+            role: role.toUpperCase(),
+            department: "Platform Staff",
+            name: "Admin",
+          });
+        }
         setIsAdminAuthenticated(true);
       } else {
-        // Redirect immediately instead of showing a 403 page
+        // Redirect immediately to admin login
         router.replace(`/admin/login?redirect=${encodeURIComponent(pathname)}`);
       }
     }
   }, [pathname, router]);
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    try {
+      await fetch("/api/auth/admin", { method: "DELETE" });
+    } catch {}
     if (typeof window !== "undefined") {
       localStorage.removeItem("collabefy_admin_token");
       localStorage.removeItem("collabefy_role");
+      localStorage.removeItem("collabefy_email");
+      localStorage.removeItem("collabefy_user");
     }
     window.location.href = "/admin/login";
   };
@@ -147,13 +175,15 @@ export default function AdminLayout({
 
         {/* Staff Identity */}
         <div className="p-4 border-b border-border/60 flex items-center gap-3 bg-surface-2/30">
-          <div className="w-8 h-8 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center font-mono text-xs font-bold text-accent">
-            ER
+          <div className="w-8 h-8 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center font-mono text-xs font-bold text-accent shrink-0">
+            {adminUser.email ? adminUser.email.slice(0, 2).toUpperCase() : "AD"}
           </div>
           <div className="truncate">
-            <div className="text-xs font-semibold text-text truncate">Elena Rostova</div>
-            <div className="text-[10px] font-mono text-text-subtle truncate">
-              Lead Platform Ops (Verified)
+            <div className="text-xs font-semibold text-text truncate">
+              {adminUser.email}
+            </div>
+            <div className="text-[10px] font-mono text-accent truncate">
+              {adminUser.role} • {adminUser.department || "Staff"}
             </div>
           </div>
         </div>

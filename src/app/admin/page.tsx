@@ -66,16 +66,16 @@ export default function AdminOverviewPage() {
   }, []);
 
   const metrics = data?.metrics || {
-    activeCampaignsCount: 3,
-    totalCampaignsCount: 6,
-    totalVerifiedViews: 645400,
-    totalRewardedUsd: 14200,
-    totalEscrowBudget: 130000,
-    creatorCount: 19,
-    brandCount: 3,
+    activeCampaignsCount: 0,
+    totalCampaignsCount: 0,
+    totalVerifiedViews: 0,
+    totalRewardedUsd: 0,
+    totalEscrowBudget: 0,
+    creatorCount: 0,
+    brandCount: 0,
     pendingSubmissionsCount: 0,
     pendingWithdrawalsCount: 0,
-    openTicketsCount: 1,
+    openTicketsCount: 0,
   };
 
   const auditLogs = data?.recentAuditLogs || [];

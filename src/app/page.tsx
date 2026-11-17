@@ -9,6 +9,7 @@ import { HowItWorks } from "@/components/HowItWorks";
 import { PlatformIcon } from "@/components/PlatformIcons";
 import { ArrowRight, UserPlus, Sparkles, Scale, ShieldCheck, Zap } from "lucide-react";
 import { formatCompactNumber, formatCurrency } from "@/lib/utils";
+import { PlatformStats } from "@/types";
 
 async function getCmsHero() {
   const backendUrl = process.env.BACKEND_INTERNAL_URL || "http://localhost:4000";
@@ -26,9 +27,33 @@ async function getCmsHero() {
   return null;
 }
 
+async function getLivePlatformStats(): Promise<PlatformStats> {
+  const backendUrl = process.env.BACKEND_INTERNAL_URL || "http://localhost:4000";
+  try {
+    const res = await fetch(`${backendUrl}/api/v1/admin/analytics/overview`, {
+      next: { revalidate: 30 },
+    });
+    if (res.ok) {
+      const json = await res.json();
+      const m = json?.data?.metrics;
+      if (m) {
+        return {
+          ongoingCampaigns: Number(m.activeCampaignsCount) || 0,
+          totalCampaignsLaunched: Number(m.totalCampaignsCount) || 0,
+          totalVerifiedViews: Number(m.totalVerifiedViews) || 0,
+          totalRewardsPaid: Number(m.totalRewardedUsd) || 0,
+          activeCreators: Number(m.creatorCount) || 0,
+          lastCalculatedAt: new Date().toISOString(),
+        };
+      }
+    }
+  } catch {}
+  return calculatePlatformStats();
+}
+
 export default async function HomePage() {
   const cmsHero = await getCmsHero();
-  const stats = calculatePlatformStats();
+  const stats = await getLivePlatformStats();
   const featured = getFeaturedCampaigns();
   const creatorActivities = getCreatorActivities();
 

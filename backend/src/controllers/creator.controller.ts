@@ -125,3 +125,54 @@ export async function updateCreatorStatus(req: Request, res: Response): Promise<
 
   res.json({ success: true, message: "Creator status updated" });
 }
+
+// Public performance leaderboard derived directly from database records
+export async function getPublicLeaderboard(req: Request, res: Response): Promise<void> {
+  const creators = await prisma.user.findMany({
+    where: { role: "CREATOR", status: "ACTIVE" },
+    orderBy: {
+      creatorProfile: {
+        totalEarnings: "desc",
+      },
+    },
+    take: 20,
+    select: {
+      id: true,
+      email: true,
+      creatorProfile: {
+        select: {
+          displayName: true,
+          handle: true,
+          avatarUrl: true,
+          totalEarnings: true,
+          totalViews: true,
+          isVerified: true,
+        },
+      },
+      _count: {
+        select: {
+          submissions: {
+            where: { status: "VERIFIED" },
+          },
+        },
+      },
+    },
+  });
+
+  const formatted = creators.map((c, idx) => ({
+    id: c.id,
+    rank: idx + 1,
+    creatorName: c.creatorProfile?.displayName || c.email.split("@")[0],
+    handle: `@${c.creatorProfile?.handle || c.email.split("@")[0]}`,
+    avatarUrl:
+      c.creatorProfile?.avatarUrl ||
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80",
+    verifiedViews: c.creatorProfile?.totalViews || 0,
+    approvedPosts: c._count.submissions || 0,
+    rewardEarned: c.creatorProfile?.totalEarnings || 0,
+    status: "Audited",
+  }));
+
+  res.json({ success: true, data: formatted });
+}
+
