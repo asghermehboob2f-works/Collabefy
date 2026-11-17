@@ -1,7 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Use a custom build directory to avoid OneDrive permission issues
-  distDir: 'build',
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
