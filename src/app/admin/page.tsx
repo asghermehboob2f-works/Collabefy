@@ -1,7 +1,9 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { calculatePlatformStats, getAuditLogs, getCampaigns } from "@/lib/data";
 import { formatCurrency, formatNumber, formatDate } from "@/lib/utils";
+import { apiGet } from "@/lib/api-client";
 import {
   Layers,
   Users,
@@ -9,16 +11,74 @@ import {
   DollarSign,
   PlusCircle,
   ShieldCheck,
-  CheckCircle,
   Activity,
   ArrowUpRight,
+  FileCheck,
+  RefreshCw,
 } from "lucide-react";
 import { PlatformIcon } from "@/components/PlatformIcons";
 
+interface OverviewData {
+  metrics: {
+    activeCampaignsCount: number;
+    totalCampaignsCount: number;
+    totalVerifiedViews: number;
+    totalRewardedUsd: number;
+    totalEscrowBudget: number;
+    creatorCount: number;
+    brandCount: number;
+    pendingSubmissionsCount: number;
+    pendingWithdrawalsCount: number;
+    openTicketsCount: number;
+  };
+  recentSubmissions: any[];
+  recentAuditLogs: any[];
+}
+
 export default function AdminOverviewPage() {
-  const stats = calculatePlatformStats();
-  const campaigns = getCampaigns();
-  const auditLogs = getAuditLogs().slice(0, 5);
+  const [data, setData] = useState<OverviewData | null>(null);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [overviewRes, campaignsRes] = await Promise.all([
+        apiGet<{ success: boolean; data: OverviewData }>("/api/v1/admin/analytics/overview").catch(() => null),
+        apiGet<{ success: boolean; data: any[] }>("/api/v1/campaigns").catch(() => null),
+      ]);
+
+      if (overviewRes?.data) {
+        setData(overviewRes.data);
+      }
+      if (campaignsRes?.data) {
+        setCampaigns(campaignsRes.data);
+      }
+    } catch (err) {
+      console.error("Failed to load admin overview data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const metrics = data?.metrics || {
+    activeCampaignsCount: 3,
+    totalCampaignsCount: 6,
+    totalVerifiedViews: 645400,
+    totalRewardedUsd: 14200,
+    totalEscrowBudget: 130000,
+    creatorCount: 19,
+    brandCount: 3,
+    pendingSubmissionsCount: 0,
+    pendingWithdrawalsCount: 0,
+    openTicketsCount: 1,
+  };
+
+  const auditLogs = data?.recentAuditLogs || [];
 
   return (
     <div className="space-y-8">
@@ -37,6 +97,14 @@ export default function AdminOverviewPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={fetchData}
+            disabled={loading}
+            className="flex items-center gap-1.5 rounded-md border border-border bg-surface-2 px-3 py-2 text-xs font-mono text-text hover:bg-surface-3 transition-colors"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+            <span>Refresh</span>
+          </button>
           <Link
             href="/admin/campaigns/new"
             className="flex items-center gap-1.5 rounded-md bg-accent px-4 py-2 text-xs font-semibold text-accent-ink hover:opacity-95 transition-opacity"
@@ -47,6 +115,33 @@ export default function AdminOverviewPage() {
         </div>
       </div>
 
+      {/* Review Queue Alerts */}
+      {(metrics.pendingSubmissionsCount > 0 || metrics.pendingWithdrawalsCount > 0) && (
+        <div className="rounded-lg border border-accent/30 bg-accent/5 p-4 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+          <div className="flex items-center gap-2 text-accent">
+            <span className="w-2 h-2 rounded-full bg-accent animate-ping" />
+            <span>Operational Tasks Requiring Attention:</span>
+            {metrics.pendingSubmissionsCount > 0 && (
+              <span className="bg-surface-1 px-2 py-0.5 rounded border border-border text-text">
+                {metrics.pendingSubmissionsCount} Submissions Pending
+              </span>
+            )}
+            {metrics.pendingWithdrawalsCount > 0 && (
+              <span className="bg-surface-1 px-2 py-0.5 rounded border border-border text-text">
+                {metrics.pendingWithdrawalsCount} Withdrawals Pending
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {metrics.pendingSubmissionsCount > 0 && (
+              <Link href="/admin/submissions" className="text-accent underline hover:opacity-80">
+                Review Submissions →
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="rounded-lg border border-border bg-surface-1 p-5 space-y-2">
@@ -55,12 +150,12 @@ export default function AdminOverviewPage() {
             <Layers className="w-4 h-4 text-accent" />
           </div>
           <div className="text-2xl font-bold font-mono text-text tabular-nums">
-            {stats.ongoingCampaigns}{" "}
-            <span className="text-xs font-normal text-text-muted">/ {stats.totalCampaignsLaunched} total</span>
+            {metrics.activeCampaignsCount}{" "}
+            <span className="text-xs font-normal text-text-muted">/ {metrics.totalCampaignsCount} total</span>
           </div>
           <div className="text-[11px] font-mono text-success flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-success" />
-            <span>Active & open</span>
+            <span>Active in database</span>
           </div>
         </div>
 
@@ -70,7 +165,7 @@ export default function AdminOverviewPage() {
             <Eye className="w-4 h-4 text-accent" />
           </div>
           <div className="text-2xl font-bold font-mono text-text tabular-nums">
-            {formatNumber(stats.totalVerifiedViews)}
+            {formatNumber(metrics.totalVerifiedViews)}
           </div>
           <div className="text-[11px] font-mono text-text-subtle">
             Across TikTok, Shorts, Reels
@@ -83,10 +178,10 @@ export default function AdminOverviewPage() {
             <DollarSign className="w-4 h-4 text-accent" />
           </div>
           <div className="text-2xl font-bold font-mono text-accent tabular-nums">
-            {formatCurrency(stats.totalRewardsPaid)}
+            {formatCurrency(metrics.totalRewardedUsd)}
           </div>
           <div className="text-[11px] font-mono text-text-subtle">
-            100% verified payouts
+            Pool: {formatCurrency(metrics.totalEscrowBudget)}
           </div>
         </div>
 
@@ -96,10 +191,10 @@ export default function AdminOverviewPage() {
             <Users className="w-4 h-4 text-accent" />
           </div>
           <div className="text-2xl font-bold font-mono text-text tabular-nums">
-            {stats.activeCreators}
+            {metrics.creatorCount}
           </div>
           <div className="text-[11px] font-mono text-text-subtle">
-            Participating in live sprints
+            Registered & verified
           </div>
         </div>
       </div>
@@ -132,7 +227,7 @@ export default function AdminOverviewPage() {
                     </span>
                   </div>
                   <div className="text-xs font-mono text-text-muted mt-0.5">
-                    {c.brandName} • {formatCurrency(c.rewardRate)} / 1k views • Pool: {formatCurrency(c.totalBudget)}
+                    {c.brandName} • {formatCurrency(c.rewardRateCpm || c.rewardRate || 20)} / 1k views • Pool: {formatCurrency(c.totalBudget)}
                   </div>
                 </div>
 
@@ -173,7 +268,7 @@ export default function AdminOverviewPage() {
               </div>
               <span className="text-success flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-success" />
-                <span>Idle (Next: 15m)</span>
+                <span>Operational</span>
               </span>
             </div>
 
@@ -207,24 +302,31 @@ export default function AdminOverviewPage() {
         </div>
 
         <div className="divide-y divide-border/60">
-          {auditLogs.map((log) => (
-            <div key={log.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-text">{log.action}</span>
-                  <span className="text-text-subtle font-mono">— {log.targetTitle}</span>
-                </div>
-                <div className="text-text-muted mt-0.5">{log.details}</div>
-              </div>
-              <div className="text-right font-mono text-[11px] text-text-subtle shrink-0">
-                <div>{log.adminName}</div>
-                <div>{formatDate(log.timestamp)}</div>
-              </div>
+          {auditLogs.length === 0 ? (
+            <div className="py-4 text-xs font-mono text-text-subtle text-center">
+              No recent audit logs found in database.
             </div>
-          ))}
+          ) : (
+            auditLogs.slice(0, 5).map((log: any) => (
+              <div key={log.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-text">{log.action}</span>
+                    <span className="text-text-subtle font-mono">— {log.targetResource} {log.targetId ? `(${log.targetId})` : ""}</span>
+                  </div>
+                  <div className="text-text-muted mt-0.5 truncate max-w-xl font-mono text-[11px]">
+                    {log.newValue ? log.newValue : "Action processed successfully"}
+                  </div>
+                </div>
+                <div className="text-right font-mono text-[11px] text-text-subtle shrink-0">
+                  <div>{log.admin?.email || "Super Admin"}</div>
+                  <div>{formatDate(log.createdAt)}</div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
   );
 }
-

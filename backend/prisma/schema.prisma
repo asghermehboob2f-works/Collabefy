@@ -1,0 +1,293 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String       @id @default(cuid())
+  email            String       @unique
+  passwordHash     String
+  role             String       @default("CREATOR") // SUPER_ADMIN, ADMIN, CAMPAIGN_MANAGER, FINANCE_MANAGER, SUPPORT_MANAGER, BRAND, CREATOR
+  status           String       @default("ACTIVE")  // ACTIVE, SUSPENDED, PENDING_VERIFICATION
+  isEmailVerified  Boolean      @default(false)
+  twoFactorEnabled Boolean      @default(false)
+  twoFactorSecret  String?
+  lastLoginAt      DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  adminProfile     AdminProfile?
+  creatorProfile   CreatorProfile?
+  brandProfile     BrandProfile?
+  
+  campaignsCreated Campaign[]   @relation("BrandCampaigns")
+  applications     CampaignApplication[]
+  submissions      ContentSubmission[]
+  ledgerEntries    EarningsLedger[]
+  withdrawals      WithdrawalRequest[]
+  supportTickets   SupportTicket[]
+  supportMessages  SupportMessage[]
+  notifications    Notification[]
+  auditLogs        AdminAuditLog[]
+  refreshTokens    RefreshToken[]
+}
+
+model RefreshToken {
+  id         String    @id @default(cuid())
+  userId     String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AdminProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  department  String?
+  permissions String   @default("[]") // JSON string of granular permissions
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CreatorProfile {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  displayName    String
+  handle         String   @unique
+  avatarUrl      String?
+  bio            String?
+  totalEarnings  Float    @default(0)
+  totalViews     Int      @default(0)
+  walletAddress  String?
+  stripeAccountId String?
+  isVerified     Boolean  @default(false)
+  socialAccounts String   @default("[]") // JSON string of connected accounts
+  portfolioLinks String   @default("[]") // JSON string
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model BrandProfile {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  companyName    String
+  logoUrl        String?
+  website        String?
+  industry       String?
+  isVerified     Boolean  @default(false)
+  totalSpent     Float    @default(0)
+  billingAddress String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Campaign {
+  id              String         @id @default(cuid())
+  title           String
+  slug            String         @unique
+  brandId         String?
+  brandName       String
+  brandLogoUrl    String?
+  coverImage      String?
+  summary         String
+  description     String
+  category        String
+  tags            String         @default("[]") // JSON array of tags
+  totalBudget     Float
+  allocatedBudget Float          @default(0)
+  rewardRateCpm   Float
+  rewardUnit      String         @default("per_1000_views")
+  status          String         @default("DRAFT") // DRAFT, SCHEDULED, ACTIVE, PAUSED, COMPLETED, ARCHIVED
+  startDate       DateTime?
+  endDate         DateTime?
+  platforms       String         @default("[]") // JSON array
+  minFollowers    Int            @default(0)
+  formats         String         @default("[\"9:16 vertical\"]") // JSON array
+  allowedCountries String        @default("[\"ALL\"]") // JSON array
+  brief           String         @default("{}") // JSON string with objective, narrative, talking points, assets
+  rules           String         @default("[]") // JSON array of rules
+  discordChannel  String?
+  featured        Boolean        @default(false)
+  featuredOrder   Int            @default(99)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  brand           User?          @relation("BrandCampaigns", fields: [brandId], references: [id])
+  applications    CampaignApplication[]
+  submissions     ContentSubmission[]
+  ledgerEntries   EarningsLedger[]
+}
+
+model CampaignApplication {
+  id            String            @id @default(cuid())
+  campaignId    String
+  creatorId     String
+  status        String            @default("PENDING") // PENDING, APPROVED, REJECTED
+  pitchText     String?
+  internalNotes String?
+  appliedAt     DateTime          @default(now())
+  reviewedAt    DateTime?
+  reviewedBy    String?
+
+  campaign      Campaign          @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  creator       User              @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, creatorId])
+}
+
+model ContentSubmission {
+  id              String           @id @default(cuid())
+  campaignId      String
+  creatorId       String
+  platform        String
+  contentUrl      String
+  status          String           @default("PENDING") // PENDING, VERIFYING, VERIFIED, REJECTED, FLAGGED
+  reportedViews   Int              @default(0)
+  verifiedViews   Int              @default(0)
+  rewardAmount    Float            @default(0)
+  rejectionReason String?
+  auditNotes      String?
+  submittedAt     DateTime         @default(now())
+  verifiedAt      DateTime?
+  reviewedBy      String?
+
+  campaign        Campaign         @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  creator         User             @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  ledgerEntries   EarningsLedger[]
+}
+
+model EarningsLedger {
+  id           String            @id @default(cuid())
+  creatorId    String
+  submissionId String?
+  campaignId   String?
+  amount       Float
+  type         String            // REWARD_CREDIT, WITHDRAWAL_DEBIT, ADJUSTMENT, REFUND
+  balanceAfter Float
+  referenceId  String?           @unique
+  description  String?
+  createdAt    DateTime          @default(now())
+
+  creator      User              @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  submission   ContentSubmission? @relation(fields: [submissionId], references: [id])
+  campaign     Campaign?         @relation(fields: [campaignId], references: [id])
+}
+
+model WithdrawalRequest {
+  id                   String           @id @default(cuid())
+  creatorId            String
+  amount               Float
+  currency             String           @default("USD")
+  paymentMethod        String           @default("STRIPE")
+  destinationDetails   String           // JSON string e.g. bank or wallet
+  status               String           @default("PENDING") // PENDING, APPROVED, REJECTED, PROCESSED, FAILED
+  transactionReference String?
+  approvedBy           String?
+  failureReason        String?
+  requestedAt          DateTime         @default(now())
+  processedAt          DateTime?
+
+  creator              User             @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+}
+
+model SupportTicket {
+  id              String           @id @default(cuid())
+  userId          String
+  subject         String
+  category        String           @default("GENERAL")
+  priority        String           @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  status          String           @default("OPEN")   // OPEN, IN_PROGRESS, WAITING_USER, RESOLVED, CLOSED
+  assignedAgentId String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages        SupportMessage[]
+}
+
+model SupportMessage {
+  id          String        @id @default(cuid())
+  ticketId    String
+  senderId    String
+  message     String
+  attachments String        @default("[]") // JSON string of URLs
+  isInternal  Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+
+  ticket      SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sender      User          @relation(fields: [senderId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String           @default("SYSTEM") // SYSTEM, CAMPAIGN, PAYMENT, VERIFICATION, SUPPORT
+  link      String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Announcement {
+  id           String             @id @default(cuid())
+  title        String
+  content      String
+  targetRole   String             @default("ALL")
+  scheduledFor DateTime?
+  sentAt       DateTime?
+  status       String             @default("DRAFT") // DRAFT, SCHEDULED, SENT
+  createdBy    String
+  createdAt    DateTime           @default(now())
+}
+
+model WebsiteContent {
+  id          String   @id @default(cuid())
+  key         String   @unique // e.g. "homepage_hero", "homepage_stats", "homepage_benefits"
+  section     String   // e.g. "HERO", "STATS", "HOW_IT_WORKS", "BENEFITS", "FAQ", "LEGAL"
+  content     String   // JSON string of editable parameters
+  isPublished Boolean  @default(true)
+  version     Int      @default(1)
+  updatedBy   String?
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+}
+
+model PlatformSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  category  String   @default("GENERAL") // "GENERAL", "FINANCIAL", "EMAIL", "SECURITY"
+  updatedBy String?
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+model AdminAuditLog {
+  id             String   @id @default(cuid())
+  adminId        String
+  action         String
+  targetResource String
+  targetId       String?
+  previousValue  String?  // JSON
+  newValue       String?  // JSON
+  ipAddress      String?
+  userAgent      String?
+  status         String   @default("SUCCESS")
+  createdAt      DateTime @default(now())
+
+  admin          User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+}

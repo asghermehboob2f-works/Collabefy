@@ -47,11 +47,12 @@ function AdminLoginForm() {
       });
 
       if (res.ok) {
-        // Server set HttpOnly cookies — store email in localStorage for display only
+        const authData = await res.json().catch(() => ({}));
+        // Store session token and role
         if (typeof window !== "undefined") {
-          localStorage.setItem("collabefy_role", "admin");
-          localStorage.setItem("collabefy_admin_token", `adm_${Date.now()}`);
-          localStorage.setItem("collabefy_email", email);
+          localStorage.setItem("collabefy_role", authData.user?.role?.toLowerCase() || "admin");
+          localStorage.setItem("collabefy_admin_token", authData.token || `adm_${Date.now()}`);
+          localStorage.setItem("collabefy_email", authData.user?.email || email);
         }
         window.location.href = redirectTo;
       } else {

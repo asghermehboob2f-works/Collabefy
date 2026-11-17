@@ -1,58 +1,94 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { checkRateLimit, rateLimitResponse } from '@/lib/security';
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { checkRateLimit, rateLimitResponse } from "@/lib/security";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-const ADMIN_CREDENTIALS = {
-  emails: ['admin@collabefy.com', 'security@collabefy.com', 'ops@collabefy.com'],
-  passkey: process.env.ADMIN_PASSKEY || 'admin2026',
-};
+const BACKEND_URL = process.env.BACKEND_INTERNAL_URL || "http://localhost:4000";
 
 export async function POST(request: NextRequest) {
-  const ip = request.headers.get('x-forwarded-for') ?? 'unknown';
-  const { allowed, resetInMs } = checkRateLimit(`admin:login:${ip}`, 5, 15 * 60 * 1000);
+  const ip = request.headers.get("x-forwarded-for") ?? "unknown";
+  const { allowed, resetInMs } = checkRateLimit(`admin:login:${ip}`, 10, 15 * 60 * 1000);
   if (!allowed) return rateLimitResponse(resetInMs);
 
   let body: { email?: string; password?: string; securityKey?: string };
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const { email = '', password = '', securityKey = '' } = body;
+  const { email = "", password = "" } = body;
 
-  const isEmailValid = ADMIN_CREDENTIALS.emails.includes(email.toLowerCase()) || email.toLowerCase().includes('admin');
-  if (!isEmailValid || password.length < 8 || securityKey.trim() !== ADMIN_CREDENTIALS.passkey) {
-    return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+  try {
+    // Authenticate with the real backend API
+    const backendRes = await fetch(`${BACKEND_URL}/api/v1/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email.trim(), password }),
+    });
+
+    const data = await backendRes.json();
+
+    if (!backendRes.ok || !data.success) {
+      return NextResponse.json(
+        { error: data?.error?.message || "Invalid credentials. Access denied." },
+        { status: backendRes.status || 401 }
+      );
+    }
+
+    const user = data.data.user;
+    const token = data.data.accessToken;
+
+    const allowedAdminRoles = ["SUPER_ADMIN", "ADMIN", "CAMPAIGN_MANAGER", "FINANCE_MANAGER", "SUPPORT_MANAGER"];
+    if (!allowedAdminRoles.includes(user.role)) {
+      return NextResponse.json(
+        { error: "Access denied. Account does not have administrative clearance." },
+        { status: 403 }
+      );
+    }
+
+    const response = NextResponse.json({
+      success: true,
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        department: user.adminProfile?.department || "Platform Staff",
+      },
+    });
+
+    // Set secure cookies
+    response.cookies.set("collabefy_role", user.role.toLowerCase(), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 8 * 60 * 60,
+      path: "/",
+    });
+
+    response.cookies.set("collabefy_admin_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 8 * 60 * 60,
+      path: "/",
+    });
+
+    return response;
+  } catch (err: any) {
+    console.error("[ADMIN LOGIN ERROR]", err);
+    return NextResponse.json(
+      { error: "Authentication service unavailable. Please check backend connection." },
+      { status: 503 }
+    );
   }
-
-  const token = `adm_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-  const response = NextResponse.json({ success: true, token });
-
-  // Set secure HttpOnly cookies
-  response.cookies.set('collabefy_role', 'admin', {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 8 * 60 * 60, // 8 hour session
-    path: '/',
-  });
-  response.cookies.set('collabefy_admin_token', token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 8 * 60 * 60,
-    path: '/',
-  });
-
-  return response;
 }
 
-export async function DELETE(request: NextRequest) {
+export async function DELETE() {
   const response = NextResponse.json({ success: true });
-  response.cookies.delete('collabefy_role');
-  response.cookies.delete('collabefy_admin_token');
+  response.cookies.delete("collabefy_role");
+  response.cookies.delete("collabefy_admin_token");
   return response;
 }

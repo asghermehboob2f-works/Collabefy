@@ -10,10 +10,35 @@ import { PlatformIcon } from "@/components/PlatformIcons";
 import { ArrowRight, UserPlus, Sparkles, Scale, ShieldCheck, Zap } from "lucide-react";
 import { formatCompactNumber, formatCurrency } from "@/lib/utils";
 
-export default function HomePage() {
+async function getCmsHero() {
+  const backendUrl = process.env.BACKEND_INTERNAL_URL || "http://localhost:4000";
+  try {
+    const res = await fetch(`${backendUrl}/api/v1/cms/homepage_hero`, {
+      next: { revalidate: 30 },
+    });
+    if (res.ok) {
+      const json = await res.json();
+      return json?.data?.content || null;
+    }
+  } catch {
+    // fallback
+  }
+  return null;
+}
+
+export default async function HomePage() {
+  const cmsHero = await getCmsHero();
   const stats = calculatePlatformStats();
   const featured = getFeaturedCampaigns();
   const creatorActivities = getCreatorActivities();
+
+  const eyebrow = cmsHero?.badge || "Creator Performance Marketplace";
+  const headline = cmsHero?.headline || "Performance sponsorships with upfront rates.";
+  const subheadline =
+    cmsHero?.subheadline ||
+    "Locked escrow pools, transparent CPM rates, and weekly payouts on audited organic views.";
+  const ctaPrimary = cmsHero?.ctaPrimaryText || "Browse Campaigns";
+  const ctaSecondary = cmsHero?.ctaSecondaryText || "Join as Creator";
 
   return (
     <div className="flex flex-col w-full overflow-x-hidden">
@@ -26,17 +51,17 @@ export default function HomePage() {
               {/* Product Eyebrow */}
               <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-2/60 px-3 py-1 mb-3.5 text-[11px] font-mono text-text-muted w-fit">
                 <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-                <span>Creator Performance Marketplace</span>
+                <span>{eyebrow}</span>
               </div>
 
               {/* Display Headline */}
               <h1 className="text-3xl sm:text-4xl lg:text-[2.65rem] xl:text-[3rem] font-bold tracking-tight text-text leading-[1.12]">
-                Performance sponsorships with upfront rates.
+                {headline}
               </h1>
 
               {/* Supporting narrative */}
               <p className="mt-3 text-sm sm:text-base text-text-muted leading-relaxed">
-                Locked escrow pools, transparent CPM rates, and weekly payouts on audited organic views.
+                {subheadline}
               </p>
 
               {/* CTAs */}
@@ -45,7 +70,7 @@ export default function HomePage() {
                   href="/campaigns"
                   className="inline-flex items-center justify-center gap-2 rounded-md bg-accent px-5 py-2.5 text-sm font-semibold text-accent-ink hover:bg-[#bbf052] transition-colors shadow-sm"
                 >
-                  <span>Browse Campaigns</span>
+                  <span>{ctaPrimary}</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
 
@@ -54,7 +79,7 @@ export default function HomePage() {
                   className="inline-flex items-center justify-center gap-2 rounded-md border border-border bg-surface-1 px-5 py-2.5 text-sm font-medium text-text hover:bg-surface-2 hover:border-border-strong transition-colors"
                 >
                   <UserPlus className="w-4 h-4 text-text-muted" />
-                  <span>Join as Creator</span>
+                  <span>{ctaSecondary}</span>
                 </Link>
               </div>
 

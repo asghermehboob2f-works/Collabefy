@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { createCampaign } from "@/lib/data";
+import { apiPost } from "@/lib/api-client";
 import { PlatformType, CampaignType, RewardUnit, CampaignStatus } from "@/types";
 import { ArrowLeft, Save, Eye, CheckCircle2 } from "lucide-react";
 
@@ -82,11 +82,46 @@ export default function NewCampaignPage() {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const camp = createCampaign(form);
-    setCreatedSlug(camp.slug);
-    setSubmitted(true);
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    try {
+      const payload = {
+        title: form.title,
+        slug: form.slug || undefined,
+        brandName: form.brandName,
+        brandLogoUrl: form.brandLogo,
+        coverImage: form.coverImage,
+        summary: form.summary || form.description.slice(0, 100),
+        description: form.description || form.summary,
+        category: form.brandCategory,
+        tags: [form.brandCategory],
+        totalBudget: Number(form.totalBudget),
+        rewardRateCpm: Number(form.rewardRate),
+        status: (form.status?.toUpperCase() || "ACTIVE") as any,
+        platforms: form.platforms.map((p) => p.replace("_", " ")),
+        formats: ["9:16 vertical"],
+        minFollowers: 1000,
+        brief: form.brief,
+        rules: form.rules.map((r) => `${r.title}: ${r.detail}`),
+        discordChannel: form.discordChannelName,
+        featured: form.featured,
+      };
+
+      const res = await apiPost<{ success: boolean; data: any }>("/api/v1/campaigns/admin", payload);
+      if (res?.data) {
+        setCreatedSlug(res.data.slug);
+        setSubmitted(true);
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || "Failed to create campaign in database");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -134,6 +169,11 @@ export default function NewCampaignPage() {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-8">
+          {errorMessage && (
+            <div className="rounded-md border border-danger/40 bg-danger/10 p-3 text-xs text-danger font-mono">
+              ⚠ Error: {errorMessage}
+            </div>
+          )}
           {/* Section 1: Basic Information */}
           <div className="rounded-lg border border-border bg-surface-1 p-6 space-y-4">
             <span className="text-xs font-mono font-semibold uppercase tracking-wider text-accent block">
@@ -349,10 +389,11 @@ export default function NewCampaignPage() {
             </Link>
             <button
               type="submit"
-              className="flex items-center gap-1.5 rounded-md bg-accent px-5 py-2 text-xs font-semibold text-accent-ink hover:opacity-95"
+              disabled={isSubmitting}
+              className="flex items-center gap-1.5 rounded-md bg-accent px-5 py-2 text-xs font-semibold text-accent-ink hover:opacity-95 disabled:opacity-50"
             >
               <Save className="w-3.5 h-3.5" />
-              <span>Publish Campaign</span>
+              <span>{isSubmitting ? "Publishing to Database..." : "Publish Campaign"}</span>
             </button>
           </div>
         </form>

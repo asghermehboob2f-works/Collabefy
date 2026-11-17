@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: collabefy-backend
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/prisma/prod.db
+      - JWT_ACCESS_SECRET=collabefy-jwt-access-secret-2026-prod-secure-token-collabefy-prod
+      - JWT_REFRESH_SECRET=collabefy-jwt-refresh-secret-2026-prod-secure-token-collabefy-prod
+      - FRONTEND_URL=http://localhost:3000
+    volumes:
+      - backend-db:/app/prisma
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: collabefy-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - BACKEND_INTERNAL_URL=http://backend:4000
+      - NEXT_PUBLIC_API_URL=http://localhost:4000
+    depends_on:
+      - backend
+
+volumes:
+  backend-db:

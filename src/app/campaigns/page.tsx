@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { initialCampaigns } from "@/lib/data";
 import { Campaign, CampaignStatus, PlatformType, CampaignType } from "@/types";
 import { CampaignCard } from "@/components/CampaignCard";
 import { Search, X, SlidersHorizontal, RotateCcw } from "lucide-react";
+import { apiGet } from "@/lib/api-client";
 
 export default function CampaignsDirectoryPage() {
+  const [liveCampaigns, setLiveCampaigns] = useState<Campaign[]>(initialCampaigns);
   const [search, setSearch] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedPlatform, setSelectedPlatform] = useState<string>("all");
@@ -14,9 +16,64 @@ export default function CampaignsDirectoryPage() {
   const [sortBy, setSortBy] = useState<"newest" | "highest_rate" | "ending_soon">("newest");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
+  useEffect(() => {
+    const fetchLive = async () => {
+      try {
+        const res = await apiGet<{ success: boolean; data: any[] }>("/api/v1/campaigns");
+        if (res?.data && res.data.length > 0) {
+          const mapped: Campaign[] = res.data.map((c: any) => ({
+            id: c.id,
+            title: c.title,
+            slug: c.slug,
+            brandName: c.brandName,
+            brandCategory: c.category || "Technology",
+            summary: c.summary,
+            description: c.description,
+            campaignType: "developer_tools",
+            coverImage: c.coverImage || "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1600&q=80",
+            brandLogo: c.brandLogoUrl || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=200&q=80",
+            status: c.status?.toLowerCase() === "active" ? "active" : c.status?.toLowerCase() || "active",
+            currency: "USD",
+            totalBudget: c.totalBudget,
+            allocatedBudget: c.allocatedBudget || 0,
+            budgetVisibility: "public",
+            rewardRate: c.rewardRateCpm || c.rewardRate || 20,
+            rewardUnit: "per_1000_views",
+            rewardVisibility: "public",
+            platforms: (c.platforms || []).map((p: string) => p.toLowerCase().replace(/ /g, "_")),
+            applicationRequired: false,
+            featured: c.featured || false,
+            featuredOrder: c.featuredOrder || 99,
+            startDate: c.startDate || new Date().toISOString(),
+            endDate: c.endDate || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+            timeZone: "UTC",
+            verifiedViews: c.verifiedViews || 0,
+            approvedClips: c.approvedClips || 0,
+            activeCreators: c.activeCreators || 0,
+            discordInviteUrl: "https://discord.gg/QmGayUXXD",
+            discordChannelName: c.discordChannel || "#campaign",
+            leaderboardEnabled: true,
+            brief: c.brief || {},
+            rules: Array.isArray(c.rules)
+              ? c.rules.map((r: any, idx: number) =>
+                  typeof r === "string" ? { id: `r-${idx}`, title: "Rule", detail: r, category: "guidelines" as const } : r
+                )
+              : [],
+            createdAt: c.createdAt || new Date().toISOString(),
+            updatedAt: c.updatedAt || new Date().toISOString(),
+          }));
+          setLiveCampaigns(mapped);
+        }
+      } catch (err) {
+        console.warn("Using fallback local campaigns:", err);
+      }
+    };
+    fetchLive();
+  }, []);
+
   // Filter & sort logic
   const filteredCampaigns = useMemo(() => {
-    let list = [...initialCampaigns];
+    let list = [...liveCampaigns];
 
     if (search.trim()) {
       const q = search.toLowerCase();

@@ -1,38 +1,87 @@
 // src/lib/api-client.ts
-// Centralized fetch wrapper for all internal API calls
+// Robust production API client for Collabefy
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
+const API_BASE = typeof window !== "undefined" ? "" : process.env.BACKEND_INTERNAL_URL || "http://localhost:4000";
 
 type FetchOptions = RequestInit & {
   timeout?: number;
 };
 
-export async function apiGet<T>(path: string, options?: FetchOptions): Promise<T> {
-  return apiFetch<T>(path, { ...options, method: 'GET' });
+function getAuthHeader(): Record<string, string> {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("collabefy_admin_token");
+    if (token && !token.startsWith("adm_")) {
+      return { Authorization: `Bearer ${token}` };
+    }
+  }
+  return {};
 }
 
-export async function apiPost<T>(path: string, body: unknown, options?: FetchOptions): Promise<T> {
+export async function apiGet<T>(path: string, options?: FetchOptions): Promise<T> {
+  return apiFetch<T>(path, { ...options, method: "GET" });
+}
+
+export async function apiPost<T>(path: string, body?: unknown, options?: FetchOptions): Promise<T> {
   return apiFetch<T>(path, {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(body),
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 }
 
+export async function apiPut<T>(path: string, body?: unknown, options?: FetchOptions): Promise<T> {
+  return apiFetch<T>(path, {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+}
+
+export async function apiPatch<T>(path: string, body?: unknown, options?: FetchOptions): Promise<T> {
+  return apiFetch<T>(path, {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+}
+
+export async function apiDelete<T>(path: string, options?: FetchOptions): Promise<T> {
+  return apiFetch<T>(path, { ...options, method: "DELETE" });
+}
+
 async function apiFetch<T>(path: string, options: FetchOptions = {}): Promise<T> {
-  const { timeout = 10000, ...init } = options;
+  const { timeout = 12000, ...init } = options;
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
+
+  // Ensure path starts with /api/v1 if not present
+  const normalizedPath = path.startsWith("/api/v1") ? path : `/api/v1${path.startsWith("/") ? path : `/${path}`}`;
+  const url = `${API_BASE}${normalizedPath}`;
+
   try {
-    const res = await fetch(`${API_BASE}${path}`, { ...init, signal: controller.signal });
+    const headers = {
+      ...getAuthHeader(),
+      ...init.headers,
+    };
+
+    const res = await fetch(url, {
+      ...init,
+      headers,
+      credentials: "include", // send/receive HttpOnly cookies
+      signal: controller.signal,
+    });
     clearTimeout(id);
+
+    const json = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err?.error || `HTTP ${res.status}`);
+      const errMsg = json?.error?.message || json?.error || json?.message || `HTTP ${res.status}`;
+      throw new Error(errMsg);
     }
-    return res.json() as Promise<T>;
-  } catch (err) {
+    return json as T;
+  } catch (err: any) {
     clearTimeout(id);
     throw err;
   }
