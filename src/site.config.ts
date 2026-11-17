@@ -3,6 +3,7 @@ export interface SiteConfig {
   tagline: string;
   description: string;
   domain: string;
+  logoUrl: string;
   accentColor: string;
   supportEmail: string;
   legalEntity: string;
@@ -28,6 +29,7 @@ export const siteConfig: SiteConfig = {
   description:
     "Collabefy is where creators find paid performance campaigns worth their time. Clear rules, transparent rates, verified views, and weekly payouts.",
   domain: "collabefy.com",
+  logoUrl: "/media/logo.png",
   accentColor: "#C8F560",
   supportEmail: "support@collabefy.com",
   legalEntity: "Collabefy Technologies Inc.",

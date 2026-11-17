@@ -46,9 +46,11 @@ export default function LoginPage() {
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-2">
           <Link href="/" className="inline-flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent text-accent-ink font-mono font-bold text-base">
-              C
-            </div>
+            <img
+              src="/media/logo.png"
+              alt={siteConfig.name}
+              className="h-8 w-8 rounded-md object-contain"
+            />
             <span className="font-semibold text-lg text-text">{siteConfig.name}</span>
           </Link>
           <h1 className="text-2xl font-semibold tracking-tight text-text">

@@ -12,9 +12,11 @@ export function Footer() {
           {/* Brand info */}
           <div className="md:col-span-2 space-y-4">
             <Link href="/" className="flex items-center gap-2.5">
-              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-accent text-accent-ink font-mono font-bold text-base">
-                C
-              </div>
+              <img
+                src="/media/logo.png"
+                alt={siteConfig.name}
+                className="h-7 w-7 rounded-md object-contain"
+              />
               <span className="font-semibold text-base tracking-tight text-text">
                 {siteConfig.name}
               </span>

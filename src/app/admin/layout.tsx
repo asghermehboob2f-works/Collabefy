@@ -130,8 +130,12 @@ export default function AdminLayout({
       {/* Left Rail Sidebar */}
       <aside className="w-full md:w-64 border-r border-border bg-surface-1/80 shrink-0 flex flex-col">
         <div className="p-4 border-b border-border flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-accent" />
+          <div className="flex items-center gap-2.5">
+            <img
+              src="/media/logo.png"
+              alt={siteConfig.name}
+              className="h-5 w-5 rounded object-contain"
+            />
             <span className="font-mono text-xs font-bold uppercase tracking-wider text-text">
               Admin Portal
             </span>

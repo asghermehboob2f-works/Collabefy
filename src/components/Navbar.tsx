@@ -57,13 +57,12 @@ export default function Navbar() {
         {/* Brand Logo & Wordmark */}
         <div className="flex items-center gap-8 lg:gap-10">
           <Link href="/" className="group flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent text-accent-ink font-mono font-bold text-lg shadow-sm group-hover:scale-105 transition-transform">
-              C
-            </div>
+            <img
+              src="/media/logo.png"
+              alt={siteConfig.name}
+              className="h-8 w-8 rounded-md object-contain transition-transform group-hover:scale-105"
+            />
             <span className="font-semibold text-lg tracking-tight text-text">{siteConfig.name}</span>
-            <span className="rounded-[4px] border border-border bg-surface-2 px-1.5 py-0.5 text-[10px] font-mono text-accent uppercase tracking-wider font-medium">
-              Live
-            </span>
           </Link>
         </div>
 

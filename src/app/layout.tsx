@@ -16,11 +16,27 @@ export const metadata: Metadata = {
     template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
+  icons: {
+    icon: [
+      { url: "/media/logo.png", type: "image/png" },
+      { url: "/favicon.ico" },
+    ],
+    shortcut: "/media/logo.png",
+    apple: "/media/logo.png",
+  },
   openGraph: {
     title: siteConfig.name,
     description: siteConfig.description,
     url: `https://${siteConfig.domain}`,
     siteName: siteConfig.name,
+    images: [
+      {
+        url: "/media/logo.png",
+        width: 500,
+        height: 500,
+        alt: siteConfig.name,
+      },
+    ],
     locale: "en_US",
     type: "website",
   },
@@ -28,6 +44,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: siteConfig.name,
     description: siteConfig.description,
+    images: ["/media/logo.png"],
   },
 };
 
