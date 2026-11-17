@@ -10,7 +10,7 @@ type FetchOptions = RequestInit & {
 function getAuthHeader(): Record<string, string> {
   if (typeof window !== "undefined") {
     const adminToken = localStorage.getItem("collabefy_admin_token");
-    if (adminToken && !adminToken.startsWith("adm_env_")) {
+    if (adminToken) {
       return { Authorization: `Bearer ${adminToken}` };
     }
     const userToken = localStorage.getItem("collabefy_token");

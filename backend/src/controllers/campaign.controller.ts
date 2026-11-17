@@ -229,8 +229,20 @@ export async function updateAdminCampaign(req: Request, res: Response, next: Nex
   if (data.platforms) updateData.platforms = JSON.stringify(data.platforms);
   if (data.formats) updateData.formats = JSON.stringify(data.formats);
   if (data.allowedCountries) updateData.allowedCountries = JSON.stringify(data.allowedCountries);
-  if (data.brief) updateData.brief = JSON.stringify(data.brief);
-  if (data.rules) updateData.rules = JSON.stringify(data.rules);
+  if (data.brief) updateData.brief = typeof data.brief === "string" ? data.brief : JSON.stringify(data.brief);
+  if (data.rules) updateData.rules = typeof data.rules === "string" ? data.rules : JSON.stringify(data.rules);
+  if (data.startDate) updateData.startDate = new Date(data.startDate);
+  if (data.endDate) updateData.endDate = new Date(data.endDate);
+
+  // If audio is provided, ensure it is synchronized into brief
+  if (data.audio) {
+    let briefObj: any = {};
+    try {
+      briefObj = typeof updateData.brief === "string" ? JSON.parse(updateData.brief) : (data.brief || JSON.parse(previous.brief || "{}"));
+    } catch {}
+    briefObj.audio = data.audio;
+    updateData.brief = JSON.stringify(briefObj);
+  }
 
   const updated = await prisma.campaign.update({
     where: { id },
@@ -329,4 +341,36 @@ export async function duplicateCampaign(req: Request, res: Response): Promise<vo
   }
 
   res.status(201).json({ success: true, data: formatCampaign(duplicated) });
+}
+
+// Admin: Delete Campaign
+export async function deleteAdminCampaign(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { id } = req.params;
+
+    const previous = await prisma.campaign.findUnique({ where: { id } });
+    if (!previous) {
+      res.status(404).json({ success: false, error: { code: "NOT_FOUND", message: "Campaign not found" } });
+      return;
+    }
+
+    await prisma.campaign.delete({
+      where: { id },
+    });
+
+    if (req.user) {
+      await logAdminActivity({
+        adminId: req.user.userId,
+        action: "CAMPAIGN_DELETE",
+        targetResource: "CAMPAIGN",
+        targetId: id,
+        previousValue: previous,
+        req,
+      });
+    }
+
+    res.json({ success: true, message: "Campaign deleted successfully", data: { id, title: previous.title } });
+  } catch (err) {
+    next(err);
+  }
 }

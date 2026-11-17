@@ -1290,7 +1290,7 @@ export function createCampaign(newCamp: Omit<Campaign, "id" | "createdAt" | "upd
 }
 
 export function updateCampaignStatus(id: string, status: Campaign["status"]): boolean {
-  const c = campaignsStore.find((x) => x.id === id);
+  const c = campaignsStore.find((x) => x.id === id || x.slug === id);
   if (!c) return false;
   c.status = status;
   c.updatedAt = new Date().toISOString();
@@ -1305,6 +1305,67 @@ export function updateCampaignStatus(id: string, status: Campaign["status"]): bo
     targetTitle: c.title,
     timestamp: new Date().toISOString(),
     details: `Status changed to ${status}.`,
+  });
+
+  return true;
+}
+
+export function updateCampaign(id: string, updates: Partial<Campaign>): Campaign | null {
+  const index = campaignsStore.findIndex((x) => x.id === id || x.slug === id);
+  if (index === -1) return null;
+
+  const prev = campaignsStore[index];
+  const updated: Campaign = {
+    ...prev,
+    ...updates,
+    brief: {
+      ...prev.brief,
+      ...(updates.brief || {}),
+    },
+    stats: {
+      ...prev.stats,
+      ...(updates.stats || {}),
+    },
+    updatedAt: new Date().toISOString(),
+  };
+
+  campaignsStore[index] = updated;
+
+  auditLogsStore.unshift({
+    id: `log-${Date.now()}`,
+    adminId: "admin-current",
+    adminName: "Authorized Administrator",
+    action: "Updated Campaign",
+    targetEntity: "campaign",
+    targetId: updated.id,
+    targetTitle: updated.title,
+    timestamp: new Date().toISOString(),
+    details: `Updated campaign ${updated.title} details.`,
+  });
+
+  return updated;
+}
+
+export function deleteCampaign(id: string): boolean {
+  const index = campaignsStore.findIndex((x) => x.id === id || x.slug === id);
+  if (index === -1) return false;
+
+  const removed = campaignsStore[index];
+  campaignsStore.splice(index, 1);
+
+  delete leaderboardsStore[removed.id];
+  delete leaderboardsStore[removed.slug];
+
+  auditLogsStore.unshift({
+    id: `log-${Date.now()}`,
+    adminId: "admin-current",
+    adminName: "Authorized Administrator",
+    action: "Deleted Campaign",
+    targetEntity: "campaign",
+    targetId: removed.id,
+    targetTitle: removed.title,
+    timestamp: new Date().toISOString(),
+    details: `Permanently deleted campaign ${removed.title}.`,
   });
 
   return true;
