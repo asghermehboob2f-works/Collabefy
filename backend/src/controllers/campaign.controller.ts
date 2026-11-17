@@ -5,13 +5,19 @@ import { logAdminActivity } from "../middleware/auditLogger.js";
 
 // Helper to parse JSON fields safely
 export function formatCampaign(c: any) {
+  const briefObj = typeof c.brief === "string" ? JSON.parse(c.brief || "{}") : c.brief;
   return {
     ...c,
+    rewardRate: c.rewardRateCpm ?? c.rewardRate,
+    currency: c.currency || "INR",
+    audio: c.audio || briefObj?.audio,
+    payableViews: c.payableViews ?? briefObj?.stats?.payableViews ?? c.verifiedViews,
+    stats: briefObj?.stats || c.stats,
     tags: typeof c.tags === "string" ? JSON.parse(c.tags || "[]") : c.tags,
     platforms: typeof c.platforms === "string" ? JSON.parse(c.platforms || "[]") : c.platforms,
     formats: typeof c.formats === "string" ? JSON.parse(c.formats || "[]") : c.formats,
     allowedCountries: typeof c.allowedCountries === "string" ? JSON.parse(c.allowedCountries || "[]") : c.allowedCountries,
-    brief: typeof c.brief === "string" ? JSON.parse(c.brief || "{}") : c.brief,
+    brief: briefObj,
     rules: typeof c.rules === "string" ? JSON.parse(c.rules || "[]") : c.rules,
   };
 }

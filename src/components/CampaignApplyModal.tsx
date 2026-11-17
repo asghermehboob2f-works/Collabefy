@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { PlatformIcon } from "./PlatformIcons";
 import { PlatformType } from "@/types";
+import { formatCurrency } from "@/lib/utils";
 import { CheckCircle2, Send, X, AlertCircle } from "lucide-react";
 
 interface CampaignApplyModalProps {
@@ -123,8 +124,8 @@ export function CampaignApplyModal({
                 </div>
                 <h4 className="text-base font-semibold text-text">Content Submitted Successfully</h4>
                 <p className="text-xs text-text-muted leading-relaxed max-w-xs mx-auto">
-                  Your clip has been queued for our 48-hour organic view audit. Once verified, performance earnings ($
-                  {rewardRate}/1k views) will reflect on your Creator Dashboard.
+                  Your clip has been queued for our 48-hour organic view audit. Once verified, performance earnings (
+                  {formatCurrency(rewardRate)}/1k views) will reflect on your Creator Dashboard.
                 </p>
                 <button
                   onClick={() => setIsOpen(false)}

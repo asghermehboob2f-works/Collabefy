@@ -70,7 +70,7 @@ export function HeroProductConsole({ campaigns, activities = [] }: HeroProductCo
               >
                 <span>{camp.brandName}</span>
                 <span className="ml-1.5 text-[10px] text-accent tabular-nums">
-                  ${camp.rewardRate.toFixed(0)}/1k
+                  {formatCurrency(camp.rewardRate)}/1k
                 </span>
               </button>
             );

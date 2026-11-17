@@ -5,6 +5,8 @@ const nextConfig = {
   compress: true,
   generateEtags: true,
   experimental: {
+    cpus: 1,
+    workerThreads: false,
     serverActions: {
       allowedOrigins: ['localhost:3000', 'collabefy.com'],
     },

@@ -7,7 +7,7 @@ export type CampaignStatus =
   | "cancelled"
   | "archived";
 
-export type PlatformType = "tiktok" | "youtube_shorts" | "instagram_reels" | "x";
+export type PlatformType = "tiktok" | "youtube_shorts" | "instagram_reels" | "instagram" | "x";
 
 export type CampaignType =
   | "short_form_clipping"
@@ -78,12 +78,33 @@ export interface Campaign {
   discordChannelName: string;
   externalAppUrl?: string;
   leaderboardEnabled: boolean;
+  audio?: string;
+  payableViews?: number;
+  exchangeRate?: number;
+  stats?: {
+    totalSubmissions?: number;
+    approvedSubmissions?: number;
+    pendingSubmissions?: number;
+    deniedSubmissions?: number;
+    totalViews?: number;
+    payableViews?: number;
+    totalBudget?: number;
+    paidAmount?: number;
+    remainingBudget?: number;
+  };
   brief: {
     objective: string;
     targetAudience: string[];
     coreNarrative: string;
     talkingPoints: string[];
     assets: CampaignAsset[];
+    audio?: string;
+    approvedFormats?: string[];
+    approvedNiches?: string[];
+    contentGuidelines?: string[];
+    captionRules?: string[];
+    additionalRules?: string[];
+    namingConventions?: string[];
   };
   rules: CampaignRule[];
   updates?: CampaignUpdate[];
