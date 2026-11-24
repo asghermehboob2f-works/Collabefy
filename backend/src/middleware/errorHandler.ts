@@ -16,15 +16,17 @@ export function errorHandler(
 ): void {
   // Handle Zod validation errors
   if (err instanceof ZodError) {
+    const errorDetails = err.errors.map((e) => ({
+      field: e.path.join("."),
+      message: e.message,
+    }));
+    const summaryMessage = errorDetails.map((e) => e.message).join(". ");
     res.status(400).json({
       success: false,
       error: {
         code: "VALIDATION_ERROR",
-        message: "Invalid request payload",
-        details: err.errors.map((e) => ({
-          field: e.path.join("."),
-          message: e.message,
-        })),
+        message: summaryMessage || "Invalid request payload",
+        details: errorDetails,
       },
     });
     return;

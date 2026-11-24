@@ -27,6 +27,8 @@ export default function RegisterPage() {
 
     setRegistered(true);
 
+    const sanitizedUsername = formData.username.trim().replace(/\s+/g, "_");
+
     try {
       const res = await fetch("/api/v1/auth/register", {
         method: "POST",
@@ -34,19 +36,23 @@ export default function RegisterPage() {
         credentials: "include",
         body: JSON.stringify({
           email: formData.email.trim(),
-          username: formData.username.trim(),
+          username: sanitizedUsername,
           password: formData.password,
           passwordConfirmation: formData.passwordConfirmation,
           role: "CREATOR",
-          displayName: formData.name.trim(),
-          handle: formData.username.trim().toLowerCase().replace(/[^a-z0-9_]/g, ""),
+          displayName: formData.name.trim() || sanitizedUsername,
+          handle: sanitizedUsername.toLowerCase().replace(/[^a-z0-9_]/g, ""),
         }),
       });
 
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        setError(data?.error?.message || "Registration failed. Please check your details.");
+        const errorMsg =
+          data?.error?.details?.map((d: any) => d.message).join(". ") ||
+          data?.error?.message ||
+          "Registration failed. Please check your details.";
+        setError(errorMsg);
         setRegistered(false);
         return;
       }
@@ -124,6 +130,9 @@ export default function RegisterPage() {
                 placeholder="mayacodes"
                 className="w-full rounded-md border border-border bg-surface-2 px-3.5 py-2.5 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none font-mono"
               />
+              <p className="text-[11px] font-mono text-text-subtle mt-1">
+                Letters, numbers, underscores, and hyphens (spaces auto-convert to underscores)
+              </p>
             </div>
 
             <div>
@@ -150,9 +159,12 @@ export default function RegisterPage() {
                 minLength={8}
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                placeholder="Minimum 8 characters"
+                placeholder="••••••••"
                 className="w-full rounded-md border border-border bg-surface-2 px-3.5 py-2.5 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none font-mono"
               />
+              <p className="text-[11px] font-mono text-text-subtle mt-1">
+                At least 8 characters, including 1 uppercase letter and 1 number
+              </p>
             </div>
 
             <div>
