@@ -81,12 +81,23 @@ async function apiFetch<T>(path: string, options: FetchOptions = {}): Promise<T>
 
     const json = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const errMsg = json?.error?.message || json?.error || json?.message || `HTTP ${res.status}`;
+      if (res.status >= 500) {
+        throw new Error("Server is busy please open a ticket 🎟️ from support section");
+      }
+      const errMsg =
+        json?.error?.details?.map((d: any) => d.message).join(". ") ||
+        json?.error?.message ||
+        json?.error ||
+        json?.message ||
+        `HTTP ${res.status}`;
       throw new Error(errMsg);
     }
     return json as T;
   } catch (err: any) {
     clearTimeout(id);
+    if (err?.name === "AbortError" || err?.message?.includes("fetch") || !err?.message) {
+      throw new Error("Server is busy please open a ticket 🎟️ from support section");
+    }
     throw err;
   }
 }

@@ -80,7 +80,17 @@ export default function DiscordSubmissionsPage() {
       const json = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        throw new Error(json?.error?.message || json?.error || "Submission failed. Please check your inputs.");
+        if (res.status >= 500) {
+          throw new Error("Server is busy please open a ticket 🎟️ from support section");
+        }
+
+        const errorDetail =
+          json?.error?.details?.map((d: any) => d.message).join(". ") ||
+          json?.error?.message ||
+          json?.error ||
+          json?.message;
+
+        throw new Error(errorDetail || "Server is busy please open a ticket 🎟️ from support section");
       }
 
       setSubmissionResult({
@@ -91,7 +101,18 @@ export default function DiscordSubmissionsPage() {
         discordUsername: json.data?.discordUsername || discordTrimmed,
       });
     } catch (err: any) {
-      setErrorMessage(err.message || "An unexpected error occurred. Please try again.");
+      if (
+        !err?.message ||
+        err.message.includes("fetch") ||
+        err.message.includes("network") ||
+        err.message.includes("Failed to fetch") ||
+        err.message.includes("NetworkError") ||
+        err.message.includes("Server is busy")
+      ) {
+        setErrorMessage("Server is busy please open a ticket 🎟️ from support section");
+      } else {
+        setErrorMessage(err.message);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -180,7 +201,20 @@ export default function DiscordSubmissionsPage() {
             {errorMessage && (
               <div className="rounded-lg border border-danger/40 bg-danger/10 p-4 flex items-start gap-3 text-xs text-danger font-mono leading-relaxed">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                <span>{errorMessage}</span>
+                <div className="flex-1 space-y-1">
+                  <div>{errorMessage}</div>
+                  {errorMessage.includes("ticket") && (
+                    <div className="pt-1">
+                      <a
+                        href="/contact"
+                        className="inline-flex items-center gap-1.5 text-[11px] underline text-danger hover:text-white transition-colors"
+                      >
+                        <span>Open support / contact page</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </a>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 

@@ -54,7 +54,7 @@ export default function RegisterPage() {
 
         if (!errorMsg) {
           if (res.status >= 500) {
-            errorMsg = "Server is currently unavailable. Please try again in a few moments.";
+            errorMsg = "Server is busy please open a ticket 🎟️ from support section";
           } else {
             errorMsg = "Registration failed. Please check your details.";
           }
@@ -78,7 +78,7 @@ export default function RegisterPage() {
 
       window.location.href = "/profile";
     } catch {
-      setError("Server is currently unavailable. Please check your connection or try again shortly.");
+      setError("Server is busy please open a ticket 🎟️ from support section");
       setRegistered(false);
     }
   };

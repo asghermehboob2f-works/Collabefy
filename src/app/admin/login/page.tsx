@@ -60,12 +60,14 @@ function AdminLoginForm() {
         setAttempts((prev) => prev + 1);
         if (res.status === 429) {
           setError("Too many login attempts. Please wait 15 minutes before trying again.");
+        } else if (res.status >= 500) {
+          setError("Server is busy please open a ticket 🎟️ from support section");
         } else {
           setError(data.error || "Invalid credentials. Access denied.");
         }
       }
     } catch {
-      setError("Authentication service unavailable. Please try again.");
+      setError("Server is busy please open a ticket 🎟️ from support section");
     } finally {
       setIsAuthenticating(false);
     }

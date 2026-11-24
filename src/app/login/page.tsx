@@ -48,7 +48,7 @@ function LoginForm() {
         let errorMsg = data?.error?.message;
         if (!errorMsg) {
           if (res.status >= 500) {
-            errorMsg = "Server is currently unavailable. Please try again in a few moments.";
+            errorMsg = "Server is busy please open a ticket 🎟️ from support section";
           } else {
             errorMsg = "Invalid email, username, or password";
           }
@@ -101,7 +101,7 @@ function LoginForm() {
         }
       }
     } catch {
-      setError("Server is currently unavailable. Please check your connection or try again shortly.");
+      setError("Server is busy please open a ticket 🎟️ from support section");
       setIsLoading(false);
     }
   };
