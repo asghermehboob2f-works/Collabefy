@@ -7,95 +7,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  SUPER_ADMIN
-  ADMIN
-  CAMPAIGN_MANAGER
-  FINANCE_MANAGER
-  SUPPORT_MANAGER
-  BRAND
-  CREATOR
-}
-
-enum UserStatus {
-  ACTIVE
-  SUSPENDED
-  PENDING_VERIFICATION
-}
-
-enum CampaignStatus {
-  DRAFT
-  SCHEDULED
-  ACTIVE
-  PAUSED
-  COMPLETED
-  ARCHIVED
-}
-
-enum ApplicationStatus {
-  PENDING
-  APPROVED
-  REJECTED
-}
-
-enum SubmissionStatus {
-  PENDING
-  VERIFYING
-  VERIFIED
-  REJECTED
-  FLAGGED
-}
-
-enum LedgerType {
-  REWARD_CREDIT
-  WITHDRAWAL_DEBIT
-  ADJUSTMENT
-  REFUND
-}
-
-enum WithdrawalStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  PROCESSED
-  FAILED
-}
-
-enum TicketPriority {
-  LOW
-  MEDIUM
-  HIGH
-  URGENT
-}
-
-enum TicketStatus {
-  OPEN
-  IN_PROGRESS
-  WAITING_USER
-  RESOLVED
-  CLOSED
-}
-
-enum NotificationType {
-  SYSTEM
-  CAMPAIGN
-  PAYMENT
-  VERIFICATION
-  SUPPORT
-}
-
-enum AnnouncementStatus {
-  DRAFT
-  SCHEDULED
-  SENT
-}
-
 model User {
   id               String       @id @default(cuid())
   email            String       @unique
+  username         String?      @unique
   passwordHash     String
-  role             Role         @default(CREATOR)
-  status           UserStatus   @default(ACTIVE)
+  role             String       @default("CREATOR")
+  status           String       @default("ACTIVE")
   isEmailVerified  Boolean      @default(false)
   twoFactorEnabled Boolean      @default(false)
   twoFactorSecret  String?
@@ -106,6 +24,7 @@ model User {
   adminProfile     AdminProfile?
   creatorProfile   CreatorProfile?
   brandProfile     BrandProfile?
+  websiteSubmission WebsiteSubmission?
   
   campaignsCreated Campaign[]   @relation("BrandCampaigns")
   applications     CampaignApplication[]
@@ -191,7 +110,7 @@ model Campaign {
   allocatedBudget Float          @default(0)
   rewardRateCpm   Float
   rewardUnit      String         @default("per_1000_views")
-  status          CampaignStatus @default(DRAFT)
+  status          String         @default("DRAFT") // DRAFT, SCHEDULED, ACTIVE, PAUSED, COMPLETED, ARCHIVED
   startDate       DateTime?
   endDate         DateTime?
   platforms       String         @default("[]") // JSON array
@@ -216,7 +135,7 @@ model CampaignApplication {
   id            String            @id @default(cuid())
   campaignId    String
   creatorId     String
-  status        ApplicationStatus @default(PENDING)
+  status        String            @default("PENDING") // PENDING, APPROVED, REJECTED
   pitchText     String?
   internalNotes String?
   appliedAt     DateTime          @default(now())
@@ -235,7 +154,7 @@ model ContentSubmission {
   creatorId       String
   platform        String
   contentUrl      String
-  status          SubmissionStatus @default(PENDING)
+  status          String           @default("PENDING") // PENDING, VERIFYING, VERIFIED, REJECTED, FLAGGED
   reportedViews   Int              @default(0)
   verifiedViews   Int              @default(0)
   rewardAmount    Float            @default(0)
@@ -256,7 +175,7 @@ model EarningsLedger {
   submissionId String?
   campaignId   String?
   amount       Float
-  type         LedgerType
+  type         String            // REWARD_CREDIT, WITHDRAWAL_DEBIT, ADJUSTMENT, REFUND
   balanceAfter Float
   referenceId  String?           @unique
   description  String?
@@ -274,7 +193,7 @@ model WithdrawalRequest {
   currency             String           @default("USD")
   paymentMethod        String           @default("STRIPE")
   destinationDetails   String           // JSON string e.g. bank or wallet
-  status               WithdrawalStatus @default(PENDING)
+  status               String           @default("PENDING") // PENDING, APPROVED, REJECTED, PROCESSED, FAILED
   transactionReference String?
   approvedBy           String?
   failureReason        String?
@@ -289,8 +208,8 @@ model SupportTicket {
   userId          String
   subject         String
   category        String           @default("GENERAL")
-  priority        TicketPriority   @default(MEDIUM)
-  status          TicketStatus     @default(OPEN)
+  priority        String           @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  status          String           @default("OPEN")   // OPEN, IN_PROGRESS, WAITING_USER, RESOLVED, CLOSED
   assignedAgentId String?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
@@ -317,7 +236,7 @@ model Notification {
   userId    String
   title     String
   message   String
-  type      NotificationType @default(SYSTEM)
+  type      String           @default("SYSTEM") // SYSTEM, CAMPAIGN, PAYMENT, VERIFICATION, SUPPORT
   link      String?
   isRead    Boolean          @default(false)
   createdAt DateTime         @default(now())
@@ -332,7 +251,7 @@ model Announcement {
   targetRole   String             @default("ALL")
   scheduledFor DateTime?
   sentAt       DateTime?
-  status       AnnouncementStatus @default(DRAFT)
+  status       String             @default("DRAFT") // DRAFT, SCHEDULED, SENT
   createdBy    String
   createdAt    DateTime           @default(now())
 }
@@ -373,5 +292,84 @@ model AdminAuditLog {
   createdAt      DateTime @default(now())
 
   admin          User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+}
+
+model DiscordSubmission {
+  id                 String                     @id @default(cuid())
+  discordUsername    String                     // Display format as submitted
+  normalizedDiscord  String                     @unique // Lowercase trimmed for unique identity matching
+  instagramUrl       String?
+  youtubeUrl         String?
+  tiktokUrl          String?
+  otherPlatform      String?
+  otherPlatformUrl   String?
+  additionalInfo     String?
+  status             String                     @default("PENDING") // PENDING, UNDER_REVIEW, APPROVED, REJECTED
+  adminNotes         String?
+  currentVersion     Int                        @default(1)
+  reviewedBy         String?
+  reviewedAt         DateTime?
+  ipAddress          String?
+  createdAt          DateTime                   @default(now())
+  updatedAt          DateTime                   @updatedAt
+  versions           DiscordSubmissionVersion[]
+}
+
+model DiscordSubmissionVersion {
+  id                 String             @id @default(cuid())
+  submissionId       String
+  versionNumber      Int
+  discordUsername    String
+  instagramUrl       String?
+  youtubeUrl         String?
+  tiktokUrl          String?
+  otherPlatform      String?
+  otherPlatformUrl   String?
+  additionalInfo     String?
+  submittedAt        DateTime           @default(now())
+  ipAddress          String?
+  submission         DiscordSubmission  @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@unique([submissionId, versionNumber])
+}
+
+model WebsiteSubmission {
+  id                 String                     @id @default(cuid())
+  userId             String                     @unique
+  instagramUrl       String?
+  youtubeUrl         String?
+  tiktokUrl          String?
+  otherPlatform      String?
+  otherPlatformUrl   String?
+  category           String?
+  bio                String?
+  portfolioUrl       String?
+  status             String                     @default("PENDING") // PENDING, UNDER_REVIEW, APPROVED, REJECTED
+  adminNotes         String?
+  currentVersion     Int                        @default(1)
+  reviewedBy         String?
+  reviewedAt         DateTime?
+  createdAt          DateTime                   @default(now())
+  updatedAt          DateTime                   @updatedAt
+  user               User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  versions           WebsiteSubmissionVersion[]
+}
+
+model WebsiteSubmissionVersion {
+  id                 String             @id @default(cuid())
+  submissionId       String
+  versionNumber      Int
+  instagramUrl       String?
+  youtubeUrl         String?
+  tiktokUrl          String?
+  otherPlatform      String?
+  otherPlatformUrl   String?
+  category           String?
+  bio                String?
+  portfolioUrl       String?
+  submittedAt        DateTime           @default(now())
+  submission         WebsiteSubmission  @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@unique([submissionId, versionNumber])
 }
 

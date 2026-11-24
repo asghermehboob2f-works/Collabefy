@@ -16,14 +16,38 @@ import { logAdminActivity } from "../middleware/auditLogger.js";
 export async function register(req: Request, res: Response): Promise<void> {
   const data = registerSchema.parse(req.body);
 
-  const existingUser = await prisma.user.findUnique({
-    where: { email: data.email.toLowerCase() },
+  if (data.passwordConfirmation && data.password !== data.passwordConfirmation) {
+    res.status(400).json({
+      success: false,
+      error: { code: "PASSWORD_MISMATCH", message: "Passwords do not match" },
+    });
+    return;
+  }
+
+  const cleanEmail = data.email.toLowerCase().trim();
+  const existingEmail = await prisma.user.findUnique({
+    where: { email: cleanEmail },
   });
 
-  if (existingUser) {
+  if (existingEmail) {
     res.status(400).json({
       success: false,
       error: { code: "EMAIL_EXISTS", message: "An account with this email already exists" },
+    });
+    return;
+  }
+
+  const rawUsername = data.username || data.email.split("@")[0];
+  const normalizedUsername = rawUsername.toLowerCase().trim().replace(/[^a-z0-9_-]/g, "");
+
+  const existingUsername = await prisma.user.findUnique({
+    where: { username: normalizedUsername },
+  });
+
+  if (existingUsername) {
+    res.status(400).json({
+      success: false,
+      error: { code: "USERNAME_EXISTS", message: "This username is already taken. Please choose another." },
     });
     return;
   }
@@ -32,7 +56,8 @@ export async function register(req: Request, res: Response): Promise<void> {
 
   const user = await prisma.user.create({
     data: {
-      email: data.email.toLowerCase(),
+      email: cleanEmail,
+      username: normalizedUsername,
       passwordHash,
       role: data.role,
       status: "ACTIVE",
@@ -40,8 +65,8 @@ export async function register(req: Request, res: Response): Promise<void> {
         data.role === "CREATOR"
           ? {
               create: {
-                displayName: data.displayName || data.email.split("@")[0],
-                handle: data.handle || data.email.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, ""),
+                displayName: data.displayName || data.username || data.email.split("@")[0],
+                handle: data.handle || normalizedUsername,
               },
             }
           : undefined,
@@ -86,6 +111,7 @@ export async function register(req: Request, res: Response): Promise<void> {
       user: {
         id: user.id,
         email: user.email,
+        username: user.username,
         role: user.role,
         status: user.status,
         creatorProfile: user.creatorProfile,
@@ -99,20 +125,26 @@ export async function register(req: Request, res: Response): Promise<void> {
 
 export async function login(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { email, password } = loginSchema.parse(req.body);
+    const parsed = loginSchema.parse(req.body);
+    const identifier = (parsed.username || parsed.email || "").trim().replace(/^["']|["']$/g, "").toLowerCase();
+    const password = parsed.password;
 
-    const cleanEmail = email.trim().replace(/^["']|["']$/g, "").toLowerCase();
     const cleanEnvEmail = config.adminEmail.trim().replace(/^["']|["']$/g, "").toLowerCase();
     const cleanEnvPass = config.adminPassword.trim().replace(/^["']|["']$/g, "");
 
     const isEnvAdmin =
-      (cleanEmail === cleanEnvEmail ||
-        cleanEmail === "admin" ||
-        cleanEmail === (process.env.ADMIN_ID || "").toLowerCase()) &&
+      (identifier === cleanEnvEmail ||
+        identifier === "admin" ||
+        identifier === (process.env.ADMIN_ID || "").toLowerCase()) &&
       password === cleanEnvPass;
 
-    let user = await prisma.user.findUnique({
-      where: { email: cleanEmail },
+    let user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: identifier },
+          { username: identifier },
+        ],
+      },
       include: {
         creatorProfile: true,
         brandProfile: true,

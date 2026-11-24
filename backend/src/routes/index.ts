@@ -2,6 +2,8 @@ import { Router } from "express";
 import authRoutes from "./auth.routes.js";
 import campaignRoutes from "./campaign.routes.js";
 import submissionRoutes from "./submission.routes.js";
+import discordSubmissionRoutes from "./discordSubmission.routes.js";
+import websiteSubmissionRoutes from "./websiteSubmission.routes.js";
 import financeRoutes from "./finance.routes.js";
 import creatorRoutes from "./creator.routes.js";
 import cmsRoutes from "./cms.routes.js";
@@ -36,6 +38,8 @@ apiRouter.get("/health", async (req, res) => {
 // Mounted domain routes
 apiRouter.use("/auth", authRoutes);
 apiRouter.use("/campaigns", campaignRoutes);
+apiRouter.use("/submissions/discord", discordSubmissionRoutes);
+apiRouter.use("/submissions/website", websiteSubmissionRoutes);
 apiRouter.use("/submissions", submissionRoutes);
 apiRouter.use("/finance", financeRoutes);
 apiRouter.use("/creators", creatorRoutes);

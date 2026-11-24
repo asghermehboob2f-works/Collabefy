@@ -12,6 +12,9 @@ import {
   ExternalLink,
   Search,
   RefreshCw,
+  Hash,
+  Globe,
+  FileCheck,
 } from "lucide-react";
 
 interface SubmissionItem {
@@ -180,6 +183,28 @@ export default function AdminSubmissionsPage() {
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
           <span>Refresh</span>
         </button>
+      </div>
+
+      {/* Submission Channels Navigation */}
+      <div className="flex items-center gap-2 p-1.5 bg-surface-1 border border-border rounded-xl">
+        <span className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-accent/10 text-accent border border-accent/20 flex items-center gap-2">
+          <FileCheck className="w-3.5 h-3.5" />
+          <span>Campaign Content Proofs</span>
+        </span>
+        <Link
+          href="/admin/submissions/discord"
+          className="px-3 py-1.5 rounded-lg text-xs font-medium text-text-muted hover:text-text hover:bg-surface-2 flex items-center gap-2 transition-colors"
+        >
+          <Hash className="w-3.5 h-3.5 text-[#5865F2]" />
+          <span>Discord Submissions</span>
+        </Link>
+        <Link
+          href="/admin/submissions/website"
+          className="px-3 py-1.5 rounded-lg text-xs font-medium text-text-muted hover:text-text hover:bg-surface-2 flex items-center gap-2 transition-colors"
+        >
+          <Globe className="w-3.5 h-3.5 text-accent" />
+          <span>Website Submissions</span>
+        </Link>
       </div>
 
       {/* Filter & Search Bar */}

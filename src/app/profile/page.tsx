@@ -347,6 +347,13 @@ export default function ProfilePage() {
           >
             Profile & Channels
           </button>
+          <Link
+            href="/submissions/dashboard"
+            className="pb-3 px-4 text-sm font-medium transition-colors border-b-2 -mb-px border-transparent text-text-muted hover:text-accent flex items-center gap-1.5"
+          >
+            <span>Intake Submissions</span>
+            <ExternalLink className="w-3.5 h-3.5" />
+          </Link>
         </div>
 
         {/* Tab 1: Submissions */}

@@ -16,7 +16,8 @@ export function generateAccessToken(payload: TokenPayload): string {
 }
 
 export function generateRefreshToken(payload: TokenPayload): { token: string; hash: string } {
-  const token = jwt.sign(payload, config.jwtRefreshSecret, {
+  const nonce = crypto.randomBytes(16).toString("hex");
+  const token = jwt.sign({ ...payload, jti: nonce }, config.jwtRefreshSecret, {
     expiresIn: "7d",
   });
   const hash = crypto.createHash("sha256").update(token).digest("hex");

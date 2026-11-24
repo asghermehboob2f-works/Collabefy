@@ -19,6 +19,9 @@ import {
   ShieldAlert,
   DollarSign,
   MessageSquare,
+  Hash,
+  Globe,
+  FileText,
 } from "lucide-react";
 
 const ALLOWED_ADMIN_ROLES = ["super_admin", "admin", "campaign_manager", "finance_manager", "support_manager"];
@@ -149,7 +152,9 @@ export default function AdminLayout({
     { label: "Overview", href: "/admin", icon: LayoutDashboard },
     { label: "Campaigns", href: "/admin/campaigns", icon: Layers },
     { label: "New Campaign", href: "/admin/campaigns/new", icon: PlusCircle },
-    { label: "Submissions", href: "/admin/submissions", icon: FileCheck },
+    { label: "Discord Submissions", href: "/admin/submissions/discord", icon: Hash },
+    { label: "Website Submissions", href: "/admin/submissions/website", icon: Globe },
+    { label: "Campaign Proofs", href: "/admin/submissions", icon: FileCheck },
     { label: "Finance & Payouts", href: "/admin/finance", icon: DollarSign },
     { label: "Creators", href: "/admin/creators", icon: Users },
     { label: "Support Desk", href: "/admin/support", icon: MessageSquare },

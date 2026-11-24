@@ -20,7 +20,8 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     req.cookies?.collabefy_access ||
     (req.headers.authorization?.startsWith("Bearer ")
       ? req.headers.authorization.substring(7)
-      : null);
+      : null) ||
+    (typeof req.query?.token === "string" ? req.query.token : null);
 
   if (!token) {
     res.status(401).json({
@@ -105,7 +106,8 @@ export async function optionalAuth(req: Request, res: Response, next: NextFuncti
     req.cookies?.collabefy_access ||
     (req.headers.authorization?.startsWith("Bearer ")
       ? req.headers.authorization.substring(7)
-      : null);
+      : null) ||
+    (typeof req.query?.token === "string" ? req.query.token : null);
 
   if (!token) {
     return next();

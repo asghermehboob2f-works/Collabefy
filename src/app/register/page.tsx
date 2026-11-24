@@ -11,6 +11,7 @@ export default function RegisterPage() {
     username: "",
     email: "",
     password: "",
+    passwordConfirmation: "",
   });
   const [error, setError] = useState<string | null>(null);
   const [registered, setRegistered] = useState(false);
@@ -18,6 +19,12 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (formData.password !== formData.passwordConfirmation) {
+      setError("Passwords do not match. Please re-enter.");
+      return;
+    }
+
     setRegistered(true);
 
     try {
@@ -27,7 +34,9 @@ export default function RegisterPage() {
         credentials: "include",
         body: JSON.stringify({
           email: formData.email.trim(),
+          username: formData.username.trim(),
           password: formData.password,
+          passwordConfirmation: formData.passwordConfirmation,
           role: "CREATOR",
           displayName: formData.name.trim(),
           handle: formData.username.trim().toLowerCase().replace(/[^a-z0-9_]/g, ""),
@@ -142,6 +151,21 @@ export default function RegisterPage() {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 placeholder="Minimum 8 characters"
+                className="w-full rounded-md border border-border bg-surface-2 px-3.5 py-2.5 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-mono text-text-subtle uppercase block mb-1">
+                Confirm Password
+              </label>
+              <input
+                type="password"
+                required
+                minLength={8}
+                value={formData.passwordConfirmation}
+                onChange={(e) => setFormData({ ...formData, passwordConfirmation: e.target.value })}
+                placeholder="Re-enter password"
                 className="w-full rounded-md border border-border bg-surface-2 px-3.5 py-2.5 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none font-mono"
               />
             </div>

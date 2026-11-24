@@ -35,7 +35,11 @@ function LoginForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ email: email.trim(), password }),
+        body: JSON.stringify({
+          username: email.trim(),
+          email: email.trim(),
+          password,
+        }),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -125,15 +129,15 @@ function LoginForm() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="text-xs font-mono text-text-subtle uppercase block mb-1">
-                Email Address
+                Username or Email Address
               </label>
               <input
-                type="email"
+                type="text"
                 required
-                autoComplete="email"
+                autoComplete="username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="creator@collabefy.com"
+                placeholder="creator username or email"
                 className="w-full rounded-md border border-border bg-surface-2 px-3.5 py-2.5 text-sm text-text placeholder:text-text-subtle focus:border-accent focus:outline-none"
               />
             </div>

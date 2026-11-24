@@ -165,7 +165,36 @@ async function main() {
   // 6. Creators
   const alexUser = await prisma.user.upsert({
     where: { email: "alex@creators.xyz" },
-    update: {},
+    update: {
+      role: "CREATOR",
+      status: "ACTIVE",
+      creatorProfile: {
+        upsert: {
+          create: {
+            displayName: "Alex Rivera",
+            handle: "alexrivera",
+            avatarUrl: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80",
+            bio: "Senior engineer sharing modern web dev frameworks & AI tooling.",
+            totalEarnings: 8420.5,
+            totalViews: 382000,
+            walletAddress: "0x71C...49b2",
+            stripeAccountId: "acct_1Nv8B3...",
+            isVerified: true,
+            socialAccounts: JSON.stringify([
+              { platform: "TikTok", handle: "@alexrivera_dev", followers: 84200 },
+              { platform: "YouTube", handle: "@AlexRiveraTech", followers: 42100 },
+            ]),
+          },
+          update: {
+            displayName: "Alex Rivera",
+            handle: "alexrivera",
+            totalEarnings: 8420.5,
+            totalViews: 382000,
+            isVerified: true,
+          },
+        },
+      },
+    },
     create: {
       email: "alex@creators.xyz",
       passwordHash: creatorPasswordHash,
@@ -194,7 +223,34 @@ async function main() {
 
   const sarahUser = await prisma.user.upsert({
     where: { email: "sarah@creators.xyz" },
-    update: {},
+    update: {
+      role: "CREATOR",
+      status: "ACTIVE",
+      creatorProfile: {
+        upsert: {
+          create: {
+            displayName: "Sarah Chen",
+            handle: "sarahc_tech",
+            avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80",
+            bio: "Productivity designer & software engineer. Building the future of workflows.",
+            totalEarnings: 6140.0,
+            totalViews: 289000,
+            isVerified: true,
+            socialAccounts: JSON.stringify([
+              { platform: "Instagram", handle: "@sarah.designs", followers: 91400 },
+              { platform: "TikTok", handle: "@sarahc_tech", followers: 64000 },
+            ]),
+          },
+          update: {
+            displayName: "Sarah Chen",
+            handle: "sarahc_tech",
+            totalEarnings: 6140.0,
+            totalViews: 289000,
+            isVerified: true,
+          },
+        },
+      },
+    },
     create: {
       email: "sarah@creators.xyz",
       passwordHash: creatorPasswordHash,
