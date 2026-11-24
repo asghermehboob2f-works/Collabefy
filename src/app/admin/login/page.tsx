@@ -3,7 +3,8 @@
 import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ShieldAlert, Lock, ArrowRight, AlertTriangle, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, AlertTriangle, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { siteConfig } from "@/site.config";
 
 export default function AdminLoginPage() {
   return (
@@ -72,8 +73,8 @@ function AdminLoginForm() {
 
   return (
     <div className="min-h-screen bg-bg flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Background Security Vignette */}
-      <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-danger/5 rounded-full blur-[140px]" />
+      {/* Background Vignette */}
+      <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-accent/5 rounded-full blur-[140px]" />
       <div className="pointer-events-none absolute bottom-0 right-0 w-[400px] h-[300px] bg-accent/3 rounded-full blur-[120px]" />
 
       {/* Decorative grid */}
@@ -88,29 +89,21 @@ function AdminLoginForm() {
 
       <div className="w-full max-w-md space-y-6 relative z-10">
         {/* Top Header */}
-        <div className="text-center space-y-3">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-danger/10 border border-danger/30 text-danger shadow-inner">
-            <ShieldAlert className="w-7 h-7" />
-          </div>
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-surface-2 border border-border px-3 py-1 text-[11px] font-mono text-danger font-semibold uppercase tracking-wider">
-            <span className="w-1.5 h-1.5 rounded-full bg-danger animate-pulse" />
-            <span>Restricted Access</span>
-          </div>
+        <div className="text-center space-y-2">
+          <Link href="/" className="inline-flex items-center gap-2">
+            <img
+              src="/media/logo.png"
+              alt={siteConfig.name}
+              className="h-8 w-8 rounded-md object-contain"
+            />
+            <span className="font-semibold text-lg text-text">{siteConfig.name}</span>
+          </Link>
           <h1 className="text-2xl font-bold tracking-tight text-text">
             Administrative Portal
           </h1>
           <p className="text-xs text-text-muted max-w-sm mx-auto leading-relaxed">
-            Authorized platform personnel only. Sign in with your administrator ID and password configured in your environment.
+            Authorized platform personnel only. Sign in with your administrator credentials.
           </p>
-        </div>
-
-        {/* Security Info Bar */}
-        <div className="rounded-lg border border-border bg-surface-2/60 px-4 py-3 flex items-center gap-3 text-xs font-mono">
-          <Lock className="w-3.5 h-3.5 text-accent shrink-0" />
-          <span className="text-text-subtle">Environment Protected Credentials</span>
-          <span className="ml-auto text-[10px] text-text-subtle bg-surface-3 px-1.5 py-0.5 rounded border border-border">
-            TLS 1.3
-          </span>
         </div>
 
         {/* Auth Form Card */}
@@ -191,10 +184,6 @@ function AdminLoginForm() {
             </Link>
           </div>
         </div>
-
-        <p className="text-center text-[10px] font-mono text-text-subtle">
-          Credentials can be modified anytime in your project&apos;s <code className="text-accent">.env</code> file.
-        </p>
       </div>
     </div>
   );
