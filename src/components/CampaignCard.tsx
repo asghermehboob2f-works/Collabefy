@@ -11,6 +11,7 @@ export function CampaignCard({ campaign }: { campaign: Campaign }) {
     : 0;
 
   const statusConfig = {
+    draft: { label: "Draft", dotColor: "bg-text-subtle" },
     active: { label: "Active", dotColor: "bg-success" },
     upcoming: { label: "Upcoming", dotColor: "bg-warning" },
     paused: { label: "Paused", dotColor: "bg-text-subtle" },

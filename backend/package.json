@@ -11,7 +11,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:seed": "tsx prisma/seed.ts",
-    "test": "node --test --import tsx tests/**/*.test.ts"
+    "test": "node --test --test-concurrency=1 --import tsx tests/**/*.test.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

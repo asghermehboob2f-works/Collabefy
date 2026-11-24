@@ -20,12 +20,14 @@ export const loginSchema = z.object({
 
 export const updateProfileSchema = z.object({
   displayName: z.string().min(2).optional(),
+  avatarUrl: z.string().optional(),
   bio: z.string().max(500).optional(),
   walletAddress: z.string().optional(),
   stripeAccountId: z.string().optional(),
   socialAccounts: z.string().optional(),
   portfolioLinks: z.string().optional(),
   companyName: z.string().optional(),
+  logoUrl: z.string().optional(),
   website: z.string().url().optional().or(z.literal("")),
   industry: z.string().optional(),
 });

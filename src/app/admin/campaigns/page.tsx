@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { formatCurrency, formatDaysRemaining, formatNumber } from "@/lib/utils";
+import { formatCurrency, formatDaysRemaining, formatNumber, formatDate } from "@/lib/utils";
 import { apiGet, apiPatch, apiPost, apiDelete } from "@/lib/api-client";
-import { initialCampaigns } from "@/lib/data";
 import { CampaignEditModal } from "@/components/admin/CampaignEditModal";
+import { CampaignPreviewModal } from "@/components/admin/CampaignPreviewModal";
 import { PlatformIcon } from "@/components/PlatformIcons";
 import {
   PlusCircle,
@@ -22,48 +22,49 @@ import {
   Sparkles,
   Music2,
   CheckCircle2,
+  Eye,
+  AlertCircle,
+  SlidersHorizontal,
+  Calendar,
+  Layers,
+  Archive,
+  ArrowUpDown,
 } from "lucide-react";
 
 export default function AdminCampaignsManagement() {
-  // Initialize with initialCampaigns so table is NEVER empty while loading
-  const [campaigns, setCampaigns] = useState<any[]>(() => {
-    return initialCampaigns.map((c) => ({
-      ...c,
-      status: c.status?.toUpperCase() || "ACTIVE",
-      rewardRateCpm: c.rewardRate,
-      category: c.brandCategory,
-      brandLogoUrl: c.brandLogo,
-    }));
-  });
-
-  const [loading, setLoading] = useState(false);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "highest_rate" | "total_budget" | "title">("newest");
+
+  // Modals & Action States
   const [editingCampaign, setEditingCampaign] = useState<any | null>(null);
+  const [previewingCampaign, setPreviewingCampaign] = useState<any | null>(null);
   const [deletingCampaign, setDeletingCampaign] = useState<any | null>(null);
   const [closingCampaign, setClosingCampaign] = useState<any | null>(null);
+  const [actionInProgress, setActionInProgress] = useState<string | null>(null);
+
+  // Non-blocking toast notification
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   const fetchCampaigns = async () => {
     try {
       setLoading(true);
-      // Try backend Express API first
-      let res: any = null;
-      try {
-        res = await apiGet<{ success: boolean; data: any[] }>("/api/v1/campaigns/admin/all");
-      } catch {}
-
-      // If backend was unreachable or empty, try internal admin route
-      if (!res?.data || res.data.length === 0) {
-        try {
-          res = await apiGet<{ success: boolean; data: any[] }>("/api/admin/campaigns");
-        } catch {}
-      }
-
-      if (res?.data && res.data.length > 0) {
+      const res = await apiGet<{ success: boolean; data: any[] }>("/api/v1/campaigns/admin/all");
+      if (res?.data && Array.isArray(res.data)) {
         setCampaigns(res.data);
+      } else {
+        setCampaigns([]);
       }
-    } catch (err) {
-      console.warn("Using local campaigns store:", err);
+    } catch (err: any) {
+      console.warn("Failed to fetch campaigns from backend:", err);
+      showToast(err.message || "Failed to load campaigns from database", "error");
     } finally {
       setLoading(false);
     }
@@ -73,66 +74,63 @@ export default function AdminCampaignsManagement() {
     fetchCampaigns();
   }, []);
 
-  const filtered = campaigns.filter((c) => {
-    const matchSearch =
-      (c.title || "").toLowerCase().includes(search.toLowerCase()) ||
-      (c.brandName || "").toLowerCase().includes(search.toLowerCase()) ||
-      (c.slug || "").toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === "ALL" || c.status?.toUpperCase() === statusFilter.toUpperCase();
-    return matchSearch && matchStatus;
-  });
+  // Filter & Sort logic
+  const filteredAndSorted = useMemo(() => {
+    let list = campaigns.filter((c) => {
+      const matchSearch =
+        (c.title || "").toLowerCase().includes(search.toLowerCase()) ||
+        (c.brandName || "").toLowerCase().includes(search.toLowerCase()) ||
+        (c.slug || "").toLowerCase().includes(search.toLowerCase()) ||
+        (c.category || "").toLowerCase().includes(search.toLowerCase());
+      const matchStatus = statusFilter === "ALL" || c.status?.toUpperCase() === statusFilter.toUpperCase();
+      return matchSearch && matchStatus;
+    });
 
-  // Toggle status: ACTIVE / PAUSED / COMPLETED
+    if (sortBy === "oldest") {
+      list.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    } else if (sortBy === "highest_rate") {
+      list.sort((a, b) => (b.rewardRateCpm ?? b.rewardRate ?? 0) - (a.rewardRateCpm ?? a.rewardRate ?? 0));
+    } else if (sortBy === "total_budget") {
+      list.sort((a, b) => (b.totalBudget ?? 0) - (a.totalBudget ?? 0));
+    } else if (sortBy === "title") {
+      list.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+    } else {
+      // Newest first default
+      list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
+
+    return list;
+  }, [campaigns, search, statusFilter, sortBy]);
+
+  // Toggle status: ACTIVE / PAUSED / COMPLETED / DRAFT / ARCHIVED
   const toggleStatus = async (id: string, newStatus: string) => {
+    setActionInProgress(id);
     try {
-      // 1. Try backend
-      try {
-        await apiPatch(`/api/v1/campaigns/admin/${id}/status`, { status: newStatus });
-      } catch {}
-
-      // 2. Try Next.js admin route
-      try {
-        await apiPatch(`/api/admin/campaigns/${id}`, { status: newStatus });
-      } catch {}
-
+      await apiPatch(`/api/v1/campaigns/admin/${id}/status`, { status: newStatus });
       setCampaigns((prev) =>
         prev.map((c) => (c.id === id || c.slug === id ? { ...c, status: newStatus } : c))
       );
+      showToast(`Campaign status updated to ${newStatus}`);
     } catch (err: any) {
-      alert(`Failed to update campaign status: ${err.message}`);
+      showToast(err.message || "Failed to update campaign status", "error");
+    } finally {
+      setActionInProgress(null);
     }
   };
 
   // Duplicate campaign
   const handleDuplicate = async (id: string) => {
+    setActionInProgress(id);
     try {
-      let duplicated: any = null;
-      try {
-        const res = await apiPost<{ success: boolean; data: any }>(`/api/v1/campaigns/admin/${id}/duplicate`);
-        if (res?.data) duplicated = res.data;
-      } catch {}
-
-      if (!duplicated) {
-        const target = campaigns.find((c) => c.id === id || c.slug === id);
-        if (target) {
-          duplicated = {
-            ...target,
-            id: `camp-${Date.now()}`,
-            title: `${target.title} (Copy)`,
-            slug: `${target.slug}-copy-${Math.floor(Math.random() * 1000)}`,
-            status: "DRAFT",
-            allocatedBudget: 0,
-            createdAt: new Date().toISOString(),
-          };
-        }
-      }
-
-      if (duplicated) {
-        setCampaigns((prev) => [duplicated, ...prev]);
-        alert(`Campaign "${duplicated.title}" duplicated successfully as DRAFT.`);
+      const res = await apiPost<{ success: boolean; data: any }>(`/api/v1/campaigns/admin/${id}/duplicate`);
+      if (res?.data) {
+        setCampaigns((prev) => [res.data, ...prev]);
+        showToast(`Campaign "${res.data.title}" duplicated as DRAFT.`);
       }
     } catch (err: any) {
-      alert(`Failed to duplicate campaign: ${err.message}`);
+      showToast(err.message || "Failed to duplicate campaign", "error");
+    } finally {
+      setActionInProgress(null);
     }
   };
 
@@ -141,61 +139,78 @@ export default function AdminCampaignsManagement() {
     if (!editingCampaign) return;
     const id = editingCampaign.id;
 
-    // 1. Send update to backend Express API
     try {
-      await apiPatch(`/api/v1/campaigns/admin/${id}`, updatedData);
-    } catch {}
+      const res = await apiPatch<{ success: boolean; data: any }>(`/api/v1/campaigns/admin/${id}`, updatedData);
+      const saved = res?.data || updatedData;
 
-    // 2. Also send to Next.js API route to update local memory & SSG store
-    try {
-      await apiPatch(`/api/admin/campaigns/${id}`, updatedData);
-    } catch {}
-
-    // 3. Immediately update client state
-    setCampaigns((prev) =>
-      prev.map((c) =>
-        c.id === id || c.slug === editingCampaign.slug
-          ? { ...c, ...updatedData }
-          : c
-      )
-    );
+      setCampaigns((prev) =>
+        prev.map((c) =>
+          c.id === id || c.slug === editingCampaign.slug
+            ? { ...c, ...updatedData, ...saved }
+            : c
+        )
+      );
+      setEditingCampaign(null);
+      showToast("Campaign changes saved to database.");
+      // Refresh list to ensure aggregate synchronization
+      fetchCampaigns();
+    } catch (err: any) {
+      showToast(err.message || "Failed to persist campaign changes", "error");
+      throw err;
+    }
   };
 
   // Close campaign (mark as COMPLETED)
-  const handleCloseCampaign = async (id: string) => {
-    await toggleStatus(id, "COMPLETED");
+  const handleCloseCampaignConfirmed = async () => {
+    if (!closingCampaign) return;
+    await toggleStatus(closingCampaign.id, "COMPLETED");
     setClosingCampaign(null);
   };
 
   // Delete campaign permanently
-  const handleDeleteCampaign = async (id: string) => {
+  const handleDeleteCampaignConfirmed = async () => {
+    if (!deletingCampaign) return;
+    const id = deletingCampaign.id;
+    setActionInProgress(id);
+
     try {
-      // 1. Delete on backend Express API
-      try {
-        await apiDelete(`/api/v1/campaigns/admin/${id}`);
-      } catch {}
-
-      // 2. Delete on Next.js API route
-      try {
-        await apiDelete(`/api/admin/campaigns/${id}`);
-      } catch {}
-
-      // 3. Remove from client state
+      await apiDelete(`/api/v1/campaigns/admin/${id}`);
       setCampaigns((prev) => prev.filter((c) => c.id !== id && c.slug !== id));
       setDeletingCampaign(null);
+      showToast("Campaign permanently deleted from database.");
     } catch (err: any) {
-      alert(`Failed to delete campaign: ${err.message}`);
+      showToast(err.message || "Failed to delete campaign", "error");
+    } finally {
+      setActionInProgress(null);
     }
   };
 
   return (
     <div className="space-y-6">
+      {/* Toast Notification */}
+      {toast && (
+        <div
+          className={`fixed bottom-6 right-6 z-50 flex items-center gap-2.5 rounded-xl border px-4 py-3 text-xs font-mono shadow-2xl transition-all ${
+            toast.type === "success"
+              ? "bg-surface-1 border-accent text-accent"
+              : "bg-surface-1 border-danger text-danger"
+          }`}
+        >
+          {toast.type === "success" ? (
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+          ) : (
+            <AlertCircle className="w-4 h-4 shrink-0" />
+          )}
+          <span>{toast.message}</span>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
         <div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-mono font-semibold uppercase tracking-wider text-accent">
-              CMS & Database Management
+              Platform CMS & Escrow Management
             </span>
             <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
           </div>
@@ -203,7 +218,7 @@ export default function AdminCampaignsManagement() {
             Campaigns ({campaigns.length})
           </h1>
           <p className="mt-1 text-xs text-text-muted">
-            Edit ongoing campaigns, update thumbnails and logos, close campaigns, or adjust escrow pools.
+            Manage creator sponsorships, update rates, toggle status, review media assets, or close campaigns.
           </p>
         </div>
 
@@ -211,7 +226,7 @@ export default function AdminCampaignsManagement() {
           <button
             onClick={fetchCampaigns}
             disabled={loading}
-            className="flex items-center gap-1.5 rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs font-mono text-text hover:bg-surface-3 transition-colors"
+            className="flex items-center gap-1.5 rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs font-mono text-text hover:bg-surface-3 transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
             <span>Refresh</span>
@@ -226,7 +241,7 @@ export default function AdminCampaignsManagement() {
         </div>
       </div>
 
-      {/* Filters & Search */}
+      {/* Filters, Search & Sorting Controls */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="relative max-w-sm flex-1">
           <Search className="w-3.5 h-3.5 text-text-subtle absolute left-3 top-1/2 -translate-y-1/2" />
@@ -239,25 +254,44 @@ export default function AdminCampaignsManagement() {
           />
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-mono text-text-subtle">Status:</span>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-lg border border-border bg-surface-1 px-3 py-2 text-xs font-mono text-text focus:outline-none focus:border-accent"
-          >
-            <option value="ALL">All Statuses ({campaigns.length})</option>
-            <option value="ACTIVE">ACTIVE (Live / Ongoing)</option>
-            <option value="PAUSED">PAUSED</option>
-            <option value="COMPLETED">COMPLETED (Closed)</option>
-            <option value="SCHEDULED">SCHEDULED</option>
-            <option value="DRAFT">DRAFT</option>
-            <option value="ARCHIVED">ARCHIVED</option>
-          </select>
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Status Filter */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-mono text-text-subtle">Status:</span>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="rounded-lg border border-border bg-surface-1 px-3 py-2 text-xs font-mono text-text focus:outline-none focus:border-accent"
+            >
+              <option value="ALL">All Statuses ({campaigns.length})</option>
+              <option value="ACTIVE">ACTIVE (Published)</option>
+              <option value="PAUSED">PAUSED</option>
+              <option value="COMPLETED">COMPLETED (Closed)</option>
+              <option value="SCHEDULED">SCHEDULED</option>
+              <option value="DRAFT">DRAFT (Unpublished)</option>
+              <option value="ARCHIVED">ARCHIVED</option>
+            </select>
+          </div>
+
+          {/* Sort By */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-mono text-text-subtle">Sort:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="rounded-lg border border-border bg-surface-1 px-3 py-2 text-xs font-mono text-text focus:outline-none focus:border-accent"
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="highest_rate">Highest Rate</option>
+              <option value="total_budget">Highest Escrow</option>
+              <option value="title">Title (A-Z)</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      {/* Table Container */}
+      {/* Main Table Container */}
       <div className="rounded-xl border border-border bg-surface-1 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs font-mono">
@@ -269,40 +303,54 @@ export default function AdminCampaignsManagement() {
                 <th className="py-3.5 px-4 font-semibold">Rate / 1k (INR)</th>
                 <th className="py-3.5 px-4 font-semibold">Budget Claimed</th>
                 <th className="py-3.5 px-4 font-semibold">Status</th>
-                <th className="py-3.5 px-4 font-semibold">Timeline</th>
+                <th className="py-3.5 px-4 font-semibold">Created / Timeline</th>
                 <th className="py-3.5 px-4 font-semibold text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/40">
-              {filtered.length === 0 ? (
+              {loading ? (
+                /* Skeleton rows while loading */
+                [1, 2, 3, 4].map((i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="py-4 px-4"><div className="w-16 h-10 rounded bg-surface-2" /></td>
+                    <td className="py-4 px-4 space-y-1.5"><div className="h-3.5 w-32 rounded bg-surface-2" /><div className="h-2.5 w-20 rounded bg-surface-2" /></td>
+                    <td className="py-4 px-4"><div className="h-3 w-20 rounded bg-surface-2" /></td>
+                    <td className="py-4 px-4"><div className="h-3 w-16 rounded bg-surface-2" /></td>
+                    <td className="py-4 px-4"><div className="h-3 w-24 rounded bg-surface-2" /></td>
+                    <td className="py-4 px-4"><div className="h-4 w-16 rounded bg-surface-2" /></td>
+                    <td className="py-4 px-4"><div className="h-3 w-20 rounded bg-surface-2" /></td>
+                    <td className="py-4 px-4 text-right"><div className="h-6 w-24 rounded bg-surface-2 ml-auto" /></td>
+                  </tr>
+                ))
+              ) : filteredAndSorted.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-xs font-mono text-text-subtle">
-                    {loading ? "Refreshing live campaigns..." : "No campaigns match your filter."}
+                    No campaigns found matching "{search}".
                   </td>
                 </tr>
               ) : (
-                filtered.map((c) => {
+                filteredAndSorted.map((c) => {
                   const rateVal = c.rewardRateCpm ?? c.rewardRate ?? 20;
                   const totalB = c.totalBudget ?? c.stats?.totalBudget ?? 0;
                   const allocB = c.allocatedBudget ?? c.stats?.paidAmount ?? 0;
                   const budgetPercent = totalB > 0 ? Math.min(100, Math.round((allocB / totalB) * 100)) : 0;
                   const audioTrack = c.audio || c.brief?.audio;
+                  const isBusy = actionInProgress === c.id;
 
                   return (
-                    <tr key={c.id || c.slug} className="hover:bg-surface-2/30 transition-colors">
-                      {/* Thumbnail Preview Column */}
+                    <tr key={c.id || c.slug} className={`hover:bg-surface-2/30 transition-colors ${isBusy ? "opacity-50" : ""}`}>
+                      {/* Thumbnail Column */}
                       <td className="py-3 px-4">
                         <div
-                          onClick={() => setEditingCampaign(c)}
+                          onClick={() => setPreviewingCampaign(c)}
                           className="relative w-16 h-10 sm:w-20 sm:h-12 rounded-lg border border-border overflow-hidden bg-surface-2 cursor-pointer group shadow-sm shrink-0"
-                          title="Click to edit campaign & thumbnail"
+                          title="Click to preview campaign visual"
                         >
                           <img
                             src={c.coverImage || "/placeholder.png"}
                             alt={c.title}
                             className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
                           />
-                          {/* Overlapping Brand Logo Avatar */}
                           <div className="absolute bottom-1 left-1 w-4 h-4 rounded border border-black/50 overflow-hidden bg-black/60 shadow">
                             <img
                               src={c.brandLogoUrl || c.brandLogo || "/placeholder.png"}
@@ -313,12 +361,12 @@ export default function AdminCampaignsManagement() {
                         </div>
                       </td>
 
-                      {/* Campaign Title & Audio */}
+                      {/* Title & Audio */}
                       <td className="py-3 px-4">
                         <div
                           onClick={() => setEditingCampaign(c)}
                           className="font-sans font-bold text-text hover:text-accent cursor-pointer transition-colors max-w-xs truncate"
-                          title="Click to edit"
+                          title="Click to edit campaign details"
                         >
                           {c.title}
                         </div>
@@ -334,15 +382,15 @@ export default function AdminCampaignsManagement() {
                         )}
                       </td>
 
-                      {/* Brand Name */}
+                      {/* Brand */}
                       <td className="py-3 px-4 text-text-muted">{c.brandName}</td>
 
-                      {/* Verified Rate per 1k views */}
+                      {/* Rate per 1k */}
                       <td className="py-3 px-4 font-bold text-accent tabular-nums">
                         {formatCurrency(rateVal)}
                       </td>
 
-                      {/* Budget Claimed */}
+                      {/* Budget */}
                       <td className="py-3 px-4 tabular-nums">
                         <div className="font-semibold text-text">
                           {formatCurrency(allocB)} / {formatCurrency(totalB)}
@@ -355,7 +403,7 @@ export default function AdminCampaignsManagement() {
                         </div>
                       </td>
 
-                      {/* Status */}
+                      {/* Status Badge */}
                       <td className="py-3 px-4">
                         <span
                           className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase border ${
@@ -365,7 +413,9 @@ export default function AdminCampaignsManagement() {
                               ? "bg-accent/10 text-accent border-accent/30"
                               : c.status === "PAUSED"
                               ? "bg-warning/10 text-warning border-warning/30"
-                              : "bg-surface-3 text-text-subtle border-border"
+                              : c.status === "DRAFT"
+                              ? "bg-surface-3 text-text-subtle border-border"
+                              : "bg-surface-2 text-text-subtle border-border"
                           }`}
                         >
                           <span
@@ -383,35 +433,51 @@ export default function AdminCampaignsManagement() {
                         </span>
                       </td>
 
-                      {/* Timeline */}
-                      <td className="py-3 px-4 text-text-subtle tabular-nums">
-                        {formatDaysRemaining(c.endDate)}
+                      {/* Timeline & Creation Date */}
+                      <td className="py-3 px-4 text-text-subtle tabular-nums space-y-0.5">
+                        <div className="text-text font-medium">{formatDaysRemaining(c.endDate)}</div>
+                        <div className="text-[10px] text-text-subtle">
+                          Created: {c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "—"}
+                        </div>
                       </td>
 
-                      {/* Action Buttons */}
+                      {/* Actions */}
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          {/* 1. Edit Campaign */}
+                          {/* 1. Preview Modal */}
+                          <button
+                            onClick={() => setPreviewingCampaign(c)}
+                            className="p-1.5 rounded-md border border-border bg-surface-2 text-text-muted hover:text-accent hover:border-accent/40 transition-colors"
+                            title="Preview Campaign Visual"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* 2. Edit Campaign */}
                           <button
                             onClick={() => setEditingCampaign(c)}
                             className="p-1.5 rounded-md border border-border bg-surface-2 text-text-muted hover:text-accent hover:border-accent/40 transition-colors"
-                            title="Edit Campaign & Media"
+                            title="Edit Campaign Details"
                           >
                             <Edit className="w-3.5 h-3.5" />
                           </button>
 
-                          {/* 2. Pause / Resume */}
-                          {c.status === "ACTIVE" ? (
+                          {/* 3. Status Action: Publish / Pause / Resume */}
+                          {c.status === "ACTIVE" && (
                             <button
                               onClick={() => toggleStatus(c.id, "PAUSED")}
+                              disabled={isBusy}
                               className="p-1.5 rounded-md border border-border bg-surface-2 text-text-muted hover:text-warning hover:border-warning/40 transition-colors"
                               title="Pause campaign"
                             >
                               <Pause className="w-3.5 h-3.5" />
                             </button>
-                          ) : (
+                          )}
+
+                          {c.status === "PAUSED" && (
                             <button
                               onClick={() => toggleStatus(c.id, "ACTIVE")}
+                              disabled={isBusy}
                               className="p-1.5 rounded-md border border-border bg-surface-2 text-text-muted hover:text-success hover:border-success/40 transition-colors"
                               title="Resume / Activate campaign"
                             >
@@ -419,18 +485,21 @@ export default function AdminCampaignsManagement() {
                             </button>
                           )}
 
-                          {/* 3. Close Campaign */}
-                          {c.status !== "COMPLETED" ? (
-                            <button
-                              onClick={() => setClosingCampaign(c)}
-                              className="p-1.5 rounded-md border border-border bg-surface-2 text-text-muted hover:text-accent hover:border-accent/40 transition-colors"
-                              title="Close Campaign (Mark as Completed)"
-                            >
-                              <Lock className="w-3.5 h-3.5" />
-                            </button>
-                          ) : (
+                          {c.status === "DRAFT" && (
                             <button
                               onClick={() => toggleStatus(c.id, "ACTIVE")}
+                              disabled={isBusy}
+                              className="p-1.5 rounded-md border border-success/40 bg-success/10 text-success hover:bg-success/20 transition-colors"
+                              title="Publish Campaign (Make Active)"
+                            >
+                              <Play className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+
+                          {c.status === "COMPLETED" && (
+                            <button
+                              onClick={() => toggleStatus(c.id, "ACTIVE")}
+                              disabled={isBusy}
                               className="p-1.5 rounded-md border border-border bg-surface-2 text-text-muted hover:text-success hover:border-success/40 transition-colors"
                               title="Reopen Campaign"
                             >
@@ -438,18 +507,22 @@ export default function AdminCampaignsManagement() {
                             </button>
                           )}
 
-                          {/* 4. Delete Campaign */}
-                          <button
-                            onClick={() => setDeletingCampaign(c)}
-                            className="p-1.5 rounded-md border border-border bg-surface-2 text-text-muted hover:text-danger hover:border-danger/40 transition-colors"
-                            title="Permanently Delete Campaign"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          {/* 4. Close Campaign */}
+                          {c.status === "ACTIVE" && (
+                            <button
+                              onClick={() => setClosingCampaign(c)}
+                              disabled={isBusy}
+                              className="p-1.5 rounded-md border border-border bg-surface-2 text-text-muted hover:text-accent hover:border-accent/40 transition-colors"
+                              title="Close Campaign (Mark as Completed)"
+                            >
+                              <Lock className="w-3.5 h-3.5" />
+                            </button>
+                          )}
 
                           {/* 5. Duplicate */}
                           <button
                             onClick={() => handleDuplicate(c.id)}
+                            disabled={isBusy}
                             className="p-1.5 rounded-md border border-border bg-surface-2 text-text-muted hover:text-text hover:border-border transition-colors"
                             title="Duplicate Campaign"
                           >
@@ -465,6 +538,16 @@ export default function AdminCampaignsManagement() {
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
                           </Link>
+
+                          {/* 7. Delete */}
+                          <button
+                            onClick={() => setDeletingCampaign(c)}
+                            disabled={isBusy}
+                            className="p-1.5 rounded-md border border-border bg-surface-2 text-text-muted hover:text-danger hover:border-danger/40 transition-colors"
+                            title="Permanently Delete Campaign"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -476,55 +559,34 @@ export default function AdminCampaignsManagement() {
         </div>
       </div>
 
-      {/* Comprehensive Edit Campaign Modal */}
+      {/* Edit Campaign Modal */}
       {editingCampaign && (
         <CampaignEditModal
           isOpen={Boolean(editingCampaign)}
           onClose={() => setEditingCampaign(null)}
           campaign={editingCampaign}
           onSave={handleSaveCampaign}
-          onDelete={handleDeleteCampaign}
-          onCloseCampaign={handleCloseCampaign}
+          onDelete={async (id) => {
+            setEditingCampaign(null);
+            setDeletingCampaign({ id, title: editingCampaign.title });
+          }}
+          onCloseCampaign={async (id) => {
+            setEditingCampaign(null);
+            setClosingCampaign({ id, title: editingCampaign.title });
+          }}
         />
       )}
 
-      {/* Quick Row Close Campaign Confirmation Dialog */}
-      {closingCampaign && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-warning/40 bg-surface-1 p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center gap-3 text-warning">
-              <div className="p-2 rounded-xl bg-warning/10 border border-warning/30">
-                <Lock className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-text">Close Campaign?</h3>
-                <span className="text-xs font-mono text-warning font-semibold">Mark as COMPLETED</span>
-              </div>
-            </div>
-
-            <p className="text-xs text-text-muted leading-relaxed">
-              Are you sure you want to close <strong className="text-text font-bold">"{closingCampaign.title}"</strong>? Creators will no longer be able to submit new video entries, but existing analytics and escrow payouts remain intact.
-            </p>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
-              <button
-                onClick={() => setClosingCampaign(null)}
-                className="px-4 py-2 rounded-lg border border-border bg-surface-2 text-xs font-mono text-text hover:bg-surface-3"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleCloseCampaign(closingCampaign.id)}
-                className="px-4 py-2 rounded-lg bg-warning text-xs font-bold text-black hover:bg-warning/90 transition-colors"
-              >
-                Close & Complete
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Preview Campaign Modal */}
+      {previewingCampaign && (
+        <CampaignPreviewModal
+          isOpen={Boolean(previewingCampaign)}
+          onClose={() => setPreviewingCampaign(null)}
+          campaign={previewingCampaign}
+        />
       )}
 
-      {/* Quick Row Delete Campaign Confirmation Dialog */}
+      {/* Accessible Confirmation Modal: Delete */}
       {deletingCampaign && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl border border-danger/40 bg-surface-1 p-6 space-y-4 shadow-2xl">
@@ -539,21 +601,61 @@ export default function AdminCampaignsManagement() {
             </div>
 
             <p className="text-xs text-text-muted leading-relaxed">
-              Are you sure you want to permanently delete <strong className="text-text font-bold">"{deletingCampaign.title}"</strong>? This will permanently delete the campaign and its applications from the database.
+              Are you sure you want to delete <strong className="text-text font-bold">"{deletingCampaign.title}"</strong>? This will permanently delete the campaign and its submissions from the persistent database.
             </p>
 
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
               <button
+                type="button"
                 onClick={() => setDeletingCampaign(null)}
-                className="px-4 py-2 rounded-lg border border-border bg-surface-2 text-xs font-mono text-text hover:bg-surface-3"
+                className="px-4 py-2 rounded-lg border border-border bg-surface-2 text-xs font-mono text-text hover:bg-surface-3 transition-colors"
               >
                 Cancel
               </button>
               <button
-                onClick={() => handleDeleteCampaign(deletingCampaign.id)}
+                type="button"
+                onClick={handleDeleteCampaignConfirmed}
                 className="px-4 py-2 rounded-lg bg-danger text-xs font-bold text-white hover:bg-danger/90 transition-colors"
               >
                 Yes, Delete Campaign
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Accessible Confirmation Modal: Close Campaign */}
+      {closingCampaign && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-warning/40 bg-surface-1 p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center gap-3 text-warning">
+              <div className="p-2 rounded-xl bg-warning/10 border border-warning/30">
+                <Lock className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-text">Close Campaign?</h3>
+                <span className="text-xs font-mono text-warning font-semibold">Mark as COMPLETED</span>
+              </div>
+            </div>
+
+            <p className="text-xs text-text-muted leading-relaxed">
+              This will transition <strong className="text-text font-bold">"{closingCampaign.title}"</strong> to <code className="text-warning font-mono">COMPLETED</code> status. Creators will no longer be able to submit new video entries, while historical view analytics and escrow settlements are locked.
+            </p>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+              <button
+                type="button"
+                onClick={() => setClosingCampaign(null)}
+                className="px-4 py-2 rounded-lg border border-border bg-surface-2 text-xs font-mono text-text hover:bg-surface-3 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleCloseCampaignConfirmed}
+                className="px-4 py-2 rounded-lg bg-warning text-xs font-bold text-black hover:bg-warning/90 transition-colors"
+              >
+                Close & Complete
               </button>
             </div>
           </div>

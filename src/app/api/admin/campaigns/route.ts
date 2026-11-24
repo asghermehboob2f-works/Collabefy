@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCampaigns } from "@/lib/data";
 
 const BACKEND_URL = process.env.BACKEND_INTERNAL_URL || "http://localhost:4000";
 
@@ -8,56 +7,26 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get("authorization");
-    const backendRes = await fetch(`${BACKEND_URL}/api/v1/campaigns/admin/all`, {
+    const cookieToken = request.cookies.get("collabefy_admin_token")?.value || request.cookies.get("collabefy_access")?.value;
+    const token = authHeader || (cookieToken ? `Bearer ${cookieToken}` : undefined);
+
+    const { searchParams } = new URL(request.url);
+    const backendRes = await fetch(`${BACKEND_URL}/api/v1/campaigns/admin/all?${searchParams.toString()}`, {
       headers: {
-        ...(authHeader ? { Authorization: authHeader } : {}),
+        ...(token ? { Authorization: token } : {}),
       },
       cache: "no-store",
     }).catch(() => null);
 
     if (backendRes && backendRes.ok) {
       const json = await backendRes.json();
-      if (Array.isArray(json.data) && json.data.length > 0) {
-        return NextResponse.json({ success: true, data: json.data });
+      if (Array.isArray(json.data)) {
+        return NextResponse.json({ success: true, data: json.data, totalCount: json.totalCount ?? json.data.length });
       }
     }
-  } catch {}
+  } catch (err: any) {
+    console.error("[ADMIN CAMPAIGNS API ERROR]", err);
+  }
 
-  // Fallback to internal data store
-  const localCampaigns = getCampaigns();
-  const formatted = localCampaigns.map((c) => ({
-    id: c.id,
-    title: c.title,
-    slug: c.slug,
-    brandName: c.brandName,
-    brandLogoUrl: c.brandLogo,
-    coverImage: c.coverImage,
-    summary: c.summary,
-    description: c.description,
-    category: c.brandCategory,
-    status: c.status?.toUpperCase(),
-    totalBudget: c.totalBudget,
-    allocatedBudget: c.allocatedBudget,
-    rewardRateCpm: c.rewardRate,
-    rewardRate: c.rewardRate,
-    rewardUnit: c.rewardUnit,
-    platforms: c.platforms,
-    featured: c.featured,
-    featuredOrder: c.featuredOrder,
-    discordChannel: c.discordChannelName,
-    discordInviteUrl: c.discordInviteUrl,
-    audio: c.audio,
-    brief: c.brief,
-    rules: c.rules,
-    stats: c.stats,
-    verifiedViews: c.verifiedViews,
-    payableViews: c.payableViews,
-    approvedClips: c.approvedClips,
-    activeCreators: c.activeCreators,
-    endDate: c.endDate,
-    createdAt: c.createdAt,
-    updatedAt: c.updatedAt,
-  }));
-
-  return NextResponse.json({ success: true, data: formatted });
+  return NextResponse.json({ success: false, data: [], error: "Unable to retrieve campaigns from backend" }, { status: 503 });
 }

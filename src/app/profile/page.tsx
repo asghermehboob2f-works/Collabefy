@@ -20,6 +20,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { PlatformType } from "@/types";
+import { ImageUploadField } from "@/components/admin/ImageUploadField";
 
 interface UserProfile {
   id: string;
@@ -84,6 +85,7 @@ export default function ProfilePage() {
 
   // Profile edit states
   const [bio, setBio] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
   const [socials, setSocials] = useState<any[]>([]);
   const [saved, setSaved] = useState(false);
@@ -118,6 +120,7 @@ export default function ProfilePage() {
       const u = resUser.data.user;
       setUser(u);
       setBio(u.creatorProfile?.bio || "Verified creator on the Collabefy performance marketing network.");
+      setAvatarUrl(u.creatorProfile?.avatarUrl || "");
       setWalletAddress(u.creatorProfile?.walletAddress || "");
 
       // Parse social accounts
@@ -155,6 +158,7 @@ export default function ProfilePage() {
     try {
       await apiPatch("/api/v1/auth/profile", {
         bio,
+        avatarUrl,
         walletAddress,
         socialAccounts: JSON.stringify(socials),
       });
@@ -243,8 +247,12 @@ export default function ProfilePage() {
         <div className="rounded-xl border border-border bg-surface-1 p-6 sm:p-8 mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
             <div className="flex items-center gap-4 sm:gap-6">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-accent/10 border-2 border-accent/30 flex items-center justify-center font-mono text-xl sm:text-2xl font-bold text-accent shadow-md">
-                {creatorName.slice(0, 2).toUpperCase()}
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-accent/10 border-2 border-accent/30 overflow-hidden flex items-center justify-center font-mono text-xl sm:text-2xl font-bold text-accent shadow-md shrink-0">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={creatorName} className="w-full h-full object-cover" />
+                ) : (
+                  creatorName.slice(0, 2).toUpperCase()
+                )}
               </div>
               <div>
                 <div className="flex items-center gap-2.5">
@@ -619,6 +627,14 @@ export default function ProfilePage() {
                   {saveError}
                 </div>
               )}
+
+              <ImageUploadField
+                label="Creator Profile Photo"
+                value={avatarUrl}
+                onChange={setAvatarUrl}
+                aspectRatio="square"
+                helperText="Square 1:1 image (e.g. 200x200px)"
+              />
 
               <div>
                 <label className="text-xs font-mono text-text-subtle block mb-1.5">Bio Narrative</label>

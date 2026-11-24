@@ -45,7 +45,7 @@ export default function AdminOverviewPage() {
       setLoading(true);
       const [overviewRes, campaignsRes] = await Promise.all([
         apiGet<{ success: boolean; data: OverviewData }>("/api/v1/admin/analytics/overview").catch(() => null),
-        apiGet<{ success: boolean; data: any[] }>("/api/v1/campaigns").catch(() => null),
+        apiGet<{ success: boolean; data: any[] }>("/api/v1/campaigns/admin/all").catch(() => null),
       ]);
 
       if (overviewRes?.data) {

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   createTicket,
+  createPublicInquiry,
   getTickets,
   getTicketById,
   addMessage,
@@ -11,6 +12,10 @@ import { requireSupportAdmin } from "../middleware/rbac.js";
 
 const router = Router();
 
+// Public contact inquiry
+router.post("/inquiries", createPublicInquiry);
+
+// Authenticated ticket endpoints
 router.post("/tickets", requireAuth, createTicket);
 router.get("/tickets", requireAuth, getTickets);
 router.get("/tickets/:id", requireAuth, getTicketById);

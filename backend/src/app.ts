@@ -1,4 +1,5 @@
 import express, { Express } from "express";
+import path from "node:path";
 import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
@@ -56,6 +57,11 @@ export function createApp(): Express {
 
   // 5. Rate limiting
   app.use("/api/v1", generalRateLimiter);
+
+  // 5b. Serve static uploads (both local backend and public Next.js uploads)
+  app.use("/uploads", express.static(path.resolve(process.cwd(), "../public/uploads")));
+  app.use("/uploads", express.static(path.resolve(process.cwd(), "public/uploads")));
+  app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
 
   // 6. Mount API v1 router
   app.use("/api/v1", apiRouter);

@@ -33,12 +33,31 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = submissionSchema.parse(body);
 
-    // Call backend API
-    const authCookie = request.cookies.get("collabefy_access")?.value;
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (authCookie) {
-      headers["Authorization"] = `Bearer ${authCookie}`;
+    // Extract authentication from Authorization header or cookies
+    const authHeader = request.headers.get("authorization");
+    const authCookie =
+      request.cookies.get("collabefy_access")?.value ||
+      request.cookies.get("collabefy_token")?.value ||
+      request.cookies.get("accessToken")?.value;
+
+    const token = authHeader?.startsWith("Bearer ")
+      ? authHeader.slice(7)
+      : authCookie || (authHeader ? authHeader : null);
+
+    if (!token) {
+      return NextResponse.json(
+        {
+          error: "Authentication required",
+          message: "Please sign in or register as a creator to submit clips and claim earnings.",
+        },
+        { status: 401 }
+      );
     }
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    };
 
     const backendRes = await fetch(`${BACKEND_URL}/api/v1/submissions`, {
       method: "POST",

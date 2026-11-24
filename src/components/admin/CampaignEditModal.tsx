@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { formatCurrency, formatNumber } from "@/lib/utils";
+import { formatCurrency, formatNumber, normalizeCampaign } from "@/lib/utils";
 import { PlatformIcon } from "../PlatformIcons";
+import { CampaignCard } from "../CampaignCard";
 import {
   X,
   Save,
@@ -22,7 +23,9 @@ import {
   Pause,
   Play,
   RotateCcw,
+  Eye,
 } from "lucide-react";
+import { ImageUploadField } from "./ImageUploadField";
 
 interface CampaignEditModalProps {
   isOpen: boolean;
@@ -57,7 +60,7 @@ export function CampaignEditModal({
   onDelete,
   onCloseCampaign,
 }: CampaignEditModalProps) {
-  const [activeTab, setActiveTab] = useState<"media" | "details" | "financials" | "brief" | "stats">("media");
+  const [activeTab, setActiveTab] = useState<"media" | "details" | "financials" | "brief" | "stats" | "preview">("media");
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
@@ -373,6 +376,18 @@ export function CampaignEditModal({
             <FileText className="w-3.5 h-3.5" />
             <span>Description & Rules</span>
           </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("preview")}
+            className={`flex items-center gap-2 py-3 px-3 text-xs font-mono font-semibold border-b-2 whitespace-nowrap transition-colors ${
+              activeTab === "preview"
+                ? "border-accent text-accent"
+                : "border-transparent text-text-muted hover:text-text"
+            }`}
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>Live Preview</span>
+          </button>
         </div>
 
         {/* Scrollable Form Body */}
@@ -380,95 +395,45 @@ export function CampaignEditModal({
           {/* TAB: MEDIA & BRANDING */}
           {activeTab === "media" && (
             <div className="space-y-6">
-              {/* Cover Image / Thumbnail Preview & Input */}
-              <div className="space-y-3">
-                <label className="text-xs font-mono font-bold uppercase tracking-wider text-accent flex items-center gap-2">
-                  <ImageIcon className="w-4 h-4" />
-                  <span>Cover Thumbnail Image (16:9 Aspect Ratio)</span>
-                </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <ImageUploadField
+                  label="Brand Logo"
+                  value={brandLogoUrl}
+                  onChange={setBrandLogoUrl}
+                  aspectRatio="square"
+                  helperText="Square 1:1 brand logo (e.g. 200x200px)"
+                />
 
-                {/* Live Preview */}
-                <div className="relative aspect-[16/9] max-h-56 w-full rounded-xl overflow-hidden border border-border bg-surface-2 shadow-inner">
-                  {coverImage ? (
-                    <img src={coverImage} alt="Cover Preview" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-text-subtle text-xs font-mono">
-                      <ImageIcon className="w-8 h-8 mb-2 opacity-50" />
-                      <span>No Cover Image URL Provided</span>
-                    </div>
-                  )}
-                  <div className="absolute top-3 left-3 rounded-full bg-black/70 backdrop-blur-md px-3 py-1 text-[11px] font-mono text-text border border-white/10">
-                    Live Thumbnail Preview
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-[11px] font-mono text-text-subtle">Thumbnail Image URL:</span>
-                  <input
-                    type="text"
-                    value={coverImage}
-                    onChange={(e) => setCoverImage(e.target.value)}
-                    placeholder="https://images.unsplash.com/photo-..."
-                    className="w-full rounded-lg border border-border bg-surface-2 px-3.5 py-2 text-xs font-mono text-text focus:outline-none focus:border-accent"
-                  />
-                </div>
-
-                {/* Quick Presets */}
-                <div className="space-y-1.5 pt-1">
-                  <span className="text-[11px] font-mono text-text-subtle">Quick Preset Themes:</span>
-                  <div className="flex flex-wrap gap-2">
-                    {PRESET_COVERS.map((preset, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => setCoverImage(preset.url)}
-                        className={`text-[11px] font-mono px-2.5 py-1 rounded-md border transition-colors ${
-                          coverImage === preset.url
-                            ? "bg-accent/15 border-accent text-accent"
-                            : "bg-surface-2 border-border text-text-muted hover:text-text hover:bg-surface-3"
-                        }`}
-                      >
-                        {preset.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <ImageUploadField
+                  label="Campaign Cover Thumbnail"
+                  value={coverImage}
+                  onChange={setCoverImage}
+                  aspectRatio="video"
+                  helperText="16:9 high-resolution banner image"
+                />
               </div>
 
-              {/* Brand Logo & Identity */}
-              <div className="pt-4 border-t border-border space-y-4">
-                <label className="text-xs font-mono font-bold uppercase tracking-wider text-accent flex items-center gap-2">
-                  <Upload className="w-4 h-4" />
-                  <span>Brand Logo & Identity</span>
-                </label>
-
-                <div className="flex items-center gap-4">
-                  <div className="h-16 w-16 rounded-xl border border-border bg-surface-2 p-1 overflow-hidden shrink-0 shadow-md">
-                    {brandLogoUrl ? (
-                      <img src={brandLogoUrl} alt="Logo" className="w-full h-full object-cover rounded-lg" />
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-[10px] font-mono text-text-subtle">
-                        No Logo
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 space-y-1">
-                    <span className="text-[11px] font-mono text-text-subtle">Brand Logo Image URL:</span>
-                    <input
-                      type="text"
-                      value={brandLogoUrl}
-                      onChange={(e) => setBrandLogoUrl(e.target.value)}
-                      placeholder="https://..."
-                      className="w-full rounded-lg border border-border bg-surface-2 px-3.5 py-2 text-xs font-mono text-text focus:outline-none focus:border-accent"
-                    />
-                  </div>
-                </div>
-
-                {/* Quick Logo Presets */}
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {PRESET_LOGOS.map((preset, idx) => (
+              {/* Quick Logo & Theme Presets for convenience */}
+              <div className="pt-4 border-t border-border space-y-3">
+                <span className="text-[11px] font-mono text-text-subtle block">Quick Stock Presets (Optional):</span>
+                <div className="flex flex-wrap gap-2">
+                  {PRESET_COVERS.map((preset, idx) => (
                     <button
                       key={idx}
+                      type="button"
+                      onClick={() => setCoverImage(preset.url)}
+                      className={`text-[11px] font-mono px-2.5 py-1 rounded-md border transition-colors ${
+                        coverImage === preset.url
+                          ? "bg-accent/15 border-accent text-accent"
+                          : "bg-surface-2 border-border text-text-muted hover:text-text hover:bg-surface-3"
+                      }`}
+                    >
+                      Banner: {preset.label}
+                    </button>
+                  ))}
+                  {PRESET_LOGOS.map((preset, idx) => (
+                    <button
+                      key={`l-${idx}`}
                       type="button"
                       onClick={() => setBrandLogoUrl(preset.url)}
                       className={`text-[11px] font-mono px-2.5 py-1 rounded-md border transition-colors ${
@@ -477,7 +442,7 @@ export function CampaignEditModal({
                           : "bg-surface-2 border-border text-text-muted hover:text-text hover:bg-surface-3"
                       }`}
                     >
-                      {preset.label}
+                      Logo: {preset.label}
                     </button>
                   ))}
                 </div>
@@ -908,6 +873,38 @@ export function CampaignEditModal({
                     className="w-full rounded-lg border border-border bg-surface-2 p-3 text-xs font-mono text-text focus:outline-none"
                   />
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: LIVE VISUAL PREVIEW */}
+          {activeTab === "preview" && (
+            <div className="space-y-6">
+              <div className="text-center text-xs font-mono text-text-subtle">
+                Visual preview of this campaign in the public marketplace:
+              </div>
+              <div className="max-w-md mx-auto">
+                <CampaignCard
+                  campaign={normalizeCampaign({
+                    id: campaign.id || "preview-id",
+                    title: title || "Campaign Title",
+                    slug: slug || "campaign-slug",
+                    brandName: brandName || "Brand Name",
+                    brandCategory: category || "General",
+                    summary: summary || description.slice(0, 120),
+                    description: description || summary,
+                    coverImage: coverImage || "/placeholder.png",
+                    brandLogo: brandLogoUrl || "/placeholder.png",
+                    status: status.toLowerCase(),
+                    rewardRate: Number(rewardRateCpm) || 20,
+                    totalBudget: Number(totalBudget) || 10000,
+                    allocatedBudget: Number(allocatedBudget) || 0,
+                    platforms: platforms.length > 0 ? platforms : ["tiktok", "instagram_reels"],
+                    verifiedViews: Number(totalViews) || 0,
+                    approvedClips: Number(approvedSubmissions) || 0,
+                    featured,
+                  })}
+                />
               </div>
             </div>
           )}

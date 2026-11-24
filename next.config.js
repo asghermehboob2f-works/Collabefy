@@ -12,7 +12,7 @@ const nextConfig = {
     },
   },
   images: {
-    domains: ["images.unsplash.com", "stitch.googleapis.com", "lh3.googleusercontent.com"],
+    domains: ["images.unsplash.com", "stitch.googleapis.com", "lh3.googleusercontent.com", "localhost", "127.0.0.1"],
   },
   async headers() {
     return [

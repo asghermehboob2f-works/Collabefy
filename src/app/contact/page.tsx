@@ -34,15 +34,15 @@ export default function ContactPage() {
         }),
       });
 
+      const data = await res.json().catch(() => ({}));
+
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.message || "Failed to submit request.");
+        throw new Error(data.error || data.message || "Failed to submit support ticket.");
       }
 
       setSubmitted(true);
     } catch (err: any) {
-      // In offline / fallback mode, simulate success
-      setSubmitted(true);
+      setErrorMessage(err.message || "Unable to submit your inquiry. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

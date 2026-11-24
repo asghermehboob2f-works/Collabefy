@@ -8,8 +8,8 @@ import { CampaignCard } from "@/components/CampaignCard";
 import { HowItWorks } from "@/components/HowItWorks";
 import { PlatformIcon } from "@/components/PlatformIcons";
 import { ArrowRight, UserPlus, Sparkles, Scale, ShieldCheck, Zap } from "lucide-react";
-import { formatCompactNumber, formatCurrency } from "@/lib/utils";
-import { PlatformStats } from "@/types";
+import { formatCompactNumber, formatCurrency, normalizeCampaign } from "@/lib/utils";
+import { PlatformStats, Campaign } from "@/types";
 
 async function getCmsHero() {
   const backendUrl = process.env.BACKEND_INTERNAL_URL || "http://localhost:4000";
@@ -31,7 +31,7 @@ async function getLivePlatformStats(): Promise<PlatformStats> {
   const backendUrl = process.env.BACKEND_INTERNAL_URL || "http://localhost:4000";
   try {
     const res = await fetch(`${backendUrl}/api/v1/admin/analytics/overview`, {
-      next: { revalidate: 30 },
+      cache: "no-store",
     });
     if (res.ok) {
       const json = await res.json();
@@ -51,10 +51,28 @@ async function getLivePlatformStats(): Promise<PlatformStats> {
   return calculatePlatformStats();
 }
 
+async function getLiveFeaturedCampaigns(): Promise<Campaign[]> {
+  const backendUrl = process.env.BACKEND_INTERNAL_URL || "http://localhost:4000";
+  try {
+    const res = await fetch(`${backendUrl}/api/v1/campaigns`, {
+      cache: "no-store",
+    });
+    if (res.ok) {
+      const json = await res.json();
+      if (Array.isArray(json.data) && json.data.length > 0) {
+        const all = json.data.map(normalizeCampaign);
+        const feat = all.filter((c: Campaign) => c.featured && c.status === "active");
+        return feat.length > 0 ? feat : all.slice(0, 3);
+      }
+    }
+  } catch {}
+  return getFeaturedCampaigns();
+}
+
 export default async function HomePage() {
   const cmsHero = await getCmsHero();
   const stats = await getLivePlatformStats();
-  const featured = getFeaturedCampaigns();
+  const featured = await getLiveFeaturedCampaigns();
   const creatorActivities = getCreatorActivities();
 
   const eyebrow = cmsHero?.badge || "Creator Performance Marketplace";

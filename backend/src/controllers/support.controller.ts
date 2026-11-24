@@ -45,6 +45,55 @@ export async function createTicket(req: Request, res: Response): Promise<void> {
   res.status(201).json({ success: true, data: ticket });
 }
 
+// Public: Guest / Visitor Contact Desk Inquiry
+export async function createPublicInquiry(req: Request, res: Response): Promise<void> {
+  const schema = z.object({
+    name: z.string().min(2, "Name required"),
+    email: z.string().email("Valid email required"),
+    subject: z.string().min(3, "Subject required"),
+    category: z.string().optional(),
+    message: z.string().min(5, "Message must be at least 5 characters"),
+    budget: z.string().optional(),
+  });
+
+  const data = schema.parse(req.body);
+
+  // Find or create a user entity for this contact email
+  let user = await prisma.user.findUnique({ where: { email: data.email.toLowerCase().trim() } });
+  if (!user) {
+    user = await prisma.user.create({
+      data: {
+        email: data.email.toLowerCase().trim(),
+        passwordHash: "GUEST_INQUIRY_NO_PASSWORD",
+        role: "CREATOR",
+        status: "ACTIVE",
+      },
+    });
+  }
+
+  const ticket = await prisma.supportTicket.create({
+    data: {
+      userId: user.id,
+      subject: `[${data.name}] ${data.subject}`,
+      category: data.category || "GENERAL",
+      priority: "MEDIUM",
+      status: "OPEN",
+      messages: {
+        create: {
+          senderId: user.id,
+          message: `${data.message}${data.budget ? `\n\n[Declared Budget: ${data.budget}]` : ""}`,
+        },
+      },
+    },
+  });
+
+  res.status(201).json({
+    success: true,
+    message: "Support ticket logged. Our team will contact you within 24 hours.",
+    ticketId: ticket.id,
+  });
+}
+
 export async function getTickets(req: Request, res: Response): Promise<void> {
   if (!req.user) {
     res.status(401).json({ success: false, error: { code: "UNAUTHORIZED", message: "Not authenticated" } });

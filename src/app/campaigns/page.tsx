@@ -1,14 +1,36 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
-import { initialCampaigns } from "@/lib/data";
-import { Campaign, CampaignStatus, PlatformType, CampaignType } from "@/types";
+import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { Campaign, PlatformType } from "@/types";
 import { CampaignCard } from "@/components/CampaignCard";
-import { Search, X, SlidersHorizontal, RotateCcw } from "lucide-react";
+import { Search, X, SlidersHorizontal, RotateCcw, Loader2, RefreshCw, AlertCircle, CheckCircle2 } from "lucide-react";
 import { apiGet } from "@/lib/api-client";
+import { normalizeCampaign } from "@/lib/utils";
+
+interface ApiResponse {
+  success: boolean;
+  data: any[];
+  pagination?: {
+    page: number;
+    limit: number;
+    totalCount: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
+}
+
+const PAGE_SIZE = 6;
 
 export default function CampaignsDirectoryPage() {
-  const [liveCampaigns, setLiveCampaigns] = useState<Campaign[]>(initialCampaigns);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [page, setPage] = useState<number>(1);
+  const [hasMore, setHasMore] = useState<boolean>(true);
+  const [initialLoading, setInitialLoading] = useState<boolean>(true);
+  const [loadingMore, setLoadingMore] = useState<boolean>(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // Filters & Sorting state
   const [search, setSearch] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedPlatform, setSelectedPlatform] = useState<string>("all");
@@ -16,101 +38,112 @@ export default function CampaignsDirectoryPage() {
   const [sortBy, setSortBy] = useState<"newest" | "highest_rate" | "ending_soon">("newest");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchLive = async () => {
-      try {
-        const res = await apiGet<{ success: boolean; data: any[] }>("/api/v1/campaigns");
-        if (res?.data && res.data.length > 0) {
-          const mapped: Campaign[] = res.data.map((c: any) => ({
-            id: c.id,
-            title: c.title,
-            slug: c.slug,
-            brandName: c.brandName,
-            brandCategory: c.category || "Technology",
-            summary: c.summary,
-            description: c.description,
-            campaignType: c.category?.toLowerCase().includes("music") || c.category?.toLowerCase().includes("ugc") ? "ugc" : "short_form_clipping",
-            coverImage: c.coverImage || "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1600&q=80",
-            brandLogo: c.brandLogoUrl || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=200&q=80",
-            status: c.status?.toLowerCase() === "active" ? "active" : c.status?.toLowerCase() || "active",
-            currency: "INR",
-            totalBudget: c.totalBudget,
-            allocatedBudget: c.allocatedBudget || 0,
-            budgetVisibility: "public",
-            rewardRate: c.rewardRateCpm || c.rewardRate || 20,
-            rewardUnit: "per_1000_views",
-            rewardVisibility: "public",
-            platforms: (c.platforms || []).map((p: string) => p.toLowerCase().replace(/ /g, "_")),
-            applicationRequired: false,
-            featured: c.featured || false,
-            featuredOrder: c.featuredOrder || 99,
-            startDate: c.startDate || new Date().toISOString(),
-            endDate: c.endDate || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-            timeZone: "UTC",
-            verifiedViews: c.verifiedViews || 0,
-            payableViews: c.payableViews || c.brief?.stats?.payableViews || c.verifiedViews || 0,
-            approvedClips: c.approvedClips || 0,
-            activeCreators: c.activeCreators || 0,
-            discordInviteUrl: "https://discord.gg/QmGayUXXD",
-            discordChannelName: c.discordChannel || "#campaign",
-            leaderboardEnabled: true,
-            audio: c.audio || c.brief?.audio,
-            stats: c.stats || c.brief?.stats,
-            brief: c.brief || {},
-            rules: Array.isArray(c.rules)
-              ? c.rules.map((r: any, idx: number) =>
-                  typeof r === "string" ? { id: `r-${idx}`, title: "Rule", detail: r, category: "guidelines" as const } : r
-                )
-              : [],
-            createdAt: c.createdAt || new Date().toISOString(),
-            updatedAt: c.updatedAt || new Date().toISOString(),
-          }));
-          setLiveCampaigns(mapped);
-        }
-      } catch (err) {
-        console.warn("Using fallback local campaigns:", err);
+  // Ref for infinite-scroll observer
+  const observerTarget = useRef<HTMLDivElement | null>(null);
+
+  // Fetch a page of campaigns from the backend
+  const fetchCampaignsPage = useCallback(
+    async (targetPage: number, isInitial: boolean = false) => {
+      if (isInitial) {
+        setInitialLoading(true);
+        setFetchError(null);
+      } else {
+        setLoadingMore(true);
       }
-    };
-    fetchLive();
-  }, []);
 
-  // Filter & sort logic
-  const filteredCampaigns = useMemo(() => {
-    let list = [...liveCampaigns];
+      try {
+        const queryParams = new URLSearchParams();
+        queryParams.set("page", String(targetPage));
+        queryParams.set("limit", String(PAGE_SIZE));
+        queryParams.set("sortBy", sortBy);
 
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter(
-        (c) =>
-          c.title.toLowerCase().includes(q) ||
-          c.brandName.toLowerCase().includes(q) ||
-          c.brandCategory.toLowerCase().includes(q) ||
-          c.summary.toLowerCase().includes(q)
-      );
+        if (search.trim()) {
+          queryParams.set("search", search.trim());
+        }
+        if (selectedPlatform !== "all") {
+          queryParams.set("platform", selectedPlatform);
+        }
+        if (selectedType !== "all") {
+          queryParams.set("category", selectedType);
+        }
+
+        const res = await apiGet<ApiResponse>(`/api/v1/campaigns?${queryParams.toString()}`);
+
+        if (res?.data && Array.isArray(res.data)) {
+          const mapped: Campaign[] = res.data.map(normalizeCampaign);
+
+          setCampaigns((prev) => {
+            if (isInitial || targetPage === 1) {
+              return mapped;
+            }
+            // Strict duplicate prevention using a Set of IDs
+            const existingIds = new Set(prev.map((c) => c.id));
+            const freshItems = mapped.filter((c) => !existingIds.has(c.id));
+            return [...prev, ...freshItems];
+          });
+
+          if (res.pagination) {
+            setTotalCount(res.pagination.totalCount);
+            setHasMore(res.pagination.hasMore);
+          } else {
+            setTotalCount(mapped.length);
+            setHasMore(false);
+          }
+          setPage(targetPage);
+        } else {
+          if (isInitial) setCampaigns([]);
+          setHasMore(false);
+        }
+      } catch (err: any) {
+        console.error("Failed to fetch campaigns from backend:", err);
+        setFetchError(err.message || "Unable to reach campaign catalogue. Please check connection.");
+      } finally {
+        if (isInitial) {
+          setInitialLoading(false);
+        } else {
+          setLoadingMore(false);
+        }
+      }
+    },
+    [search, selectedPlatform, selectedType, sortBy]
+  );
+
+  // Re-fetch on filter or sort change
+  useEffect(() => {
+    setPage(1);
+    fetchCampaignsPage(1, true);
+  }, [fetchCampaignsPage]);
+
+  // Load more trigger
+  const handleLoadMore = () => {
+    if (!loadingMore && hasMore) {
+      fetchCampaignsPage(page + 1, false);
     }
+  };
 
-    if (selectedStatus !== "all") {
-      list = list.filter((c) => c.status === selectedStatus);
-    }
+  // IntersectionObserver for natural bottom scrolling
+  useEffect(() => {
+    const target = observerTarget.current;
+    if (!target) return;
 
-    if (selectedPlatform !== "all") {
-      list = list.filter((c) => c.platforms.includes(selectedPlatform as PlatformType));
-    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore && !initialLoading) {
+          handleLoadMore();
+        }
+      },
+      { rootMargin: "250px" }
+    );
 
-    if (selectedType !== "all") {
-      list = list.filter((c) => c.campaignType === selectedType);
-    }
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [hasMore, loadingMore, initialLoading, page]);
 
-    if (sortBy === "highest_rate") {
-      list.sort((a, b) => b.rewardRate - a.rewardRate);
-    } else if (sortBy === "ending_soon") {
-      list.sort((a, b) => new Date(a.endDate).getTime() - new Date(b.endDate).getTime());
-    } else {
-      list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    }
-
-    return list;
-  }, [search, selectedStatus, selectedPlatform, selectedType, sortBy]);
+  // Client-side status filtering if non-active statuses are simulated
+  const displayedCampaigns = useMemo(() => {
+    if (selectedStatus === "all") return campaigns;
+    return campaigns.filter((c) => c.status === selectedStatus);
+  }, [campaigns, selectedStatus]);
 
   const hasActiveFilters =
     search.trim() !== "" ||
@@ -132,13 +165,13 @@ export default function CampaignsDirectoryPage() {
         {/* Page Header */}
         <div className="mb-8">
           <div className="text-xs font-mono font-semibold uppercase tracking-wider text-accent">
-            Marketplace
+            Performance Marketplace
           </div>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight text-text">
             Campaign Catalogue
           </h1>
           <p className="mt-1 text-sm text-text-muted">
-            Explore verified sponsorships with guaranteed escrow and transparent performance rates.
+            Explore verified short-form video sponsorships with guaranteed escrow pools and fixed upfront CPM rates.
           </p>
         </div>
 
@@ -149,7 +182,7 @@ export default function CampaignsDirectoryPage() {
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-subtle" />
             <input
               type="text"
-              placeholder="Search by campaign title, brand, or category..."
+              placeholder="Search by title, brand, or category..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full rounded-md border border-border bg-surface-1 py-2 pl-10 pr-4 text-sm text-text placeholder:text-text-subtle focus:border-border-strong focus:outline-none"
@@ -174,7 +207,7 @@ export default function CampaignsDirectoryPage() {
                 className="rounded-md border border-border bg-surface-1 px-3 py-2 text-xs font-mono text-text focus:outline-none"
               >
                 <option value="newest">Newest First</option>
-                <option value="highest_rate">Highest Rate</option>
+                <option value="highest_rate">Highest CPM Rate</option>
                 <option value="ending_soon">Ending Soonest</option>
               </select>
             </div>
@@ -289,10 +322,10 @@ export default function CampaignsDirectoryPage() {
                 <div className="space-y-1">
                   {[
                     { label: "All Platforms", value: "all" },
-                    { label: "TikTok", value: "tiktok" },
-                    { label: "YouTube Shorts", value: "youtube_shorts" },
-                    { label: "Instagram Reels", value: "instagram_reels" },
-                    { label: "X / Twitter", value: "x" },
+                    { label: "TikTok", value: "TikTok" },
+                    { label: "YouTube Shorts", value: "YouTube Shorts" },
+                    { label: "Instagram Reels", value: "Instagram Reels" },
+                    { label: "X (Twitter)", value: "X (Twitter)" },
                   ].map((p) => (
                     <button
                       key={p.value}
@@ -309,18 +342,20 @@ export default function CampaignsDirectoryPage() {
                 </div>
               </div>
 
-              {/* Campaign Type Filter */}
+              {/* Campaign Category Filter */}
               <div className="space-y-2">
                 <label className="text-xs font-mono text-text-subtle uppercase tracking-wider block">
-                  Campaign Format
+                  Campaign Category
                 </label>
                 <div className="space-y-1">
                   {[
-                    { label: "All Formats", value: "all" },
-                    { label: "Developer Tools", value: "developer_tools" },
-                    { label: "Product Demos", value: "product_demo" },
-                    { label: "UGC & Tutorials", value: "ugc" },
-                    { label: "Short Form Clipping", value: "short_form_clipping" },
+                    { label: "All Categories", value: "all" },
+                    { label: "Developer Tools & Cloud", value: "Developer Tools" },
+                    { label: "AI & Machine Learning", value: "AI" },
+                    { label: "Productivity & SaaS", value: "Productivity" },
+                    { label: "Gaming & Esports", value: "Gaming" },
+                    { label: "Music & Entertainment", value: "Music" },
+                    { label: "FinTech & Crypto", value: "FinTech" },
                   ].map((t) => (
                     <button
                       key={t.value}
@@ -339,20 +374,67 @@ export default function CampaignsDirectoryPage() {
             </div>
           </aside>
 
-          {/* Results Grid */}
-          <main className="lg:col-span-3">
-            <div className="mb-4 flex items-center justify-between text-xs font-mono text-text-subtle">
-              <span>Showing {filteredCampaigns.length} campaigns</span>
+          {/* Results Grid & Load More Container */}
+          <main className="lg:col-span-3 space-y-6">
+            <div className="flex items-center justify-between text-xs font-mono text-text-subtle">
+              <span>
+                Showing {displayedCampaigns.length} of {totalCount || displayedCampaigns.length} campaigns
+              </span>
+              <button
+                onClick={() => fetchCampaignsPage(1, true)}
+                className="hover:text-text flex items-center gap-1 transition-colors"
+                title="Refresh campaigns"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${initialLoading ? "animate-spin" : ""}`} />
+                <span>Refresh</span>
+              </button>
             </div>
 
-            {filteredCampaigns.length === 0 ? (
+            {/* Error State */}
+            {fetchError && (
+              <div className="rounded-lg border border-danger/40 bg-danger/10 p-4 text-xs text-danger flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{fetchError}</span>
+                </div>
+                <button
+                  onClick={() => fetchCampaignsPage(1, true)}
+                  className="rounded border border-danger/40 px-3 py-1 font-mono hover:bg-danger/20 transition-colors"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+
+            {/* Skeleton Loading State */}
+            {initialLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[1, 2, 3, 4, 5, 6].map((idx) => (
+                  <div
+                    key={idx}
+                    className="rounded-xl border border-border bg-surface-1 p-5 space-y-4 animate-pulse shadow-sm"
+                  >
+                    <div className="aspect-[16/9] w-full rounded-lg bg-surface-2" />
+                    <div className="space-y-2">
+                      <div className="h-4 w-3/4 rounded bg-surface-2" />
+                      <div className="h-3 w-1/2 rounded bg-surface-2" />
+                    </div>
+                    <div className="flex justify-between pt-2 border-t border-border/40">
+                      <div className="h-4 w-20 rounded bg-surface-2" />
+                      <div className="h-4 w-24 rounded bg-surface-2" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : displayedCampaigns.length === 0 ? (
+              /* Empty State */
               <div className="rounded-lg border border-dashed border-border bg-surface-1/40 p-12 text-center">
                 <div className="mx-auto w-10 h-10 rounded-full bg-surface-2 flex items-center justify-center text-text-subtle mb-3">
                   <Search className="w-5 h-5" />
                 </div>
                 <h3 className="text-base font-semibold text-text">No campaigns match your filters</h3>
                 <p className="mt-1 text-xs text-text-muted max-w-sm mx-auto">
-                  Try broadening your search keyword or clearing the selected status and platform filters.
+                  Try broadening your search keyword or clearing the selected status and category filters.
                 </p>
                 <button
                   onClick={clearAllFilters}
@@ -362,10 +444,47 @@ export default function CampaignsDirectoryPage() {
                 </button>
               </div>
             ) : (
+              /* Populated Grid */
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {filteredCampaigns.map((camp) => (
+                {displayedCampaigns.map((camp) => (
                   <CampaignCard key={camp.id} campaign={camp} />
                 ))}
+              </div>
+            )}
+
+            {/* Load More & Infinite Scroll Section */}
+            {!initialLoading && displayedCampaigns.length > 0 && (
+              <div className="pt-6 pb-4 flex flex-col items-center justify-center space-y-3">
+                {hasMore ? (
+                  <>
+                    <button
+                      onClick={handleLoadMore}
+                      disabled={loadingMore}
+                      className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-surface-2 hover:bg-surface-3 px-6 py-3 text-xs font-mono font-semibold text-text hover:border-accent/40 shadow-sm transition-all active:scale-98 disabled:opacity-50"
+                    >
+                      {loadingMore ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin text-accent" />
+                          <span>Loading more campaigns...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>Load More Campaigns</span>
+                          <span className="text-text-subtle">
+                            ({displayedCampaigns.length} of {totalCount})
+                          </span>
+                        </>
+                      )}
+                    </button>
+                    {/* Natural scroll intersection trigger */}
+                    <div ref={observerTarget} className="h-4 w-full" />
+                  </>
+                ) : (
+                  <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-2/60 px-4 py-1.5 text-xs font-mono text-text-muted">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-accent" />
+                    <span>All {displayedCampaigns.length} active campaigns loaded</span>
+                  </div>
+                )}
               </div>
             )}
           </main>
@@ -374,4 +493,3 @@ export default function CampaignsDirectoryPage() {
     </div>
   );
 }
-

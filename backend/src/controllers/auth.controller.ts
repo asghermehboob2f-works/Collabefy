@@ -369,6 +369,7 @@ export async function updateProfile(req: Request, res: Response): Promise<void> 
       where: { userId: req.user.userId },
       data: {
         displayName: data.displayName,
+        avatarUrl: data.avatarUrl,
         bio: data.bio,
         walletAddress: data.walletAddress,
         stripeAccountId: data.stripeAccountId,
@@ -385,6 +386,7 @@ export async function updateProfile(req: Request, res: Response): Promise<void> 
       where: { userId: req.user.userId },
       data: {
         companyName: data.companyName,
+        logoUrl: data.logoUrl,
         website: data.website,
         industry: data.industry,
       },

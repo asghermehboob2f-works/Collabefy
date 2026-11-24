@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { PlatformIcon } from "./PlatformIcons";
 import { PlatformType } from "@/types";
 import { formatCurrency } from "@/lib/utils";
-import { CheckCircle2, Send, X, AlertCircle } from "lucide-react";
+import { CheckCircle2, Send, X, AlertCircle, LogIn, UserPlus } from "lucide-react";
 
 interface CampaignApplyModalProps {
   campaignId: string;
@@ -27,10 +28,36 @@ export function CampaignApplyModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("collabefy_token") || localStorage.getItem("collabefy_admin_token");
+      setIsLoggedIn(Boolean(token));
+      const storedEmail = localStorage.getItem("collabefy_email");
+      try {
+        const storedUser = JSON.parse(localStorage.getItem("collabefy_user") || "{}");
+        if (storedUser.creatorProfile?.handle) {
+          setCreatorHandle(`@${storedUser.creatorProfile.handle}`);
+        } else if (storedEmail) {
+          setCreatorHandle(`@${storedEmail.split("@")[0]}`);
+        }
+      } catch {}
+    }
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    const token = typeof window !== "undefined"
+      ? localStorage.getItem("collabefy_token") || localStorage.getItem("collabefy_admin_token")
+      : null;
+
+    if (!token) {
+      setError("Please sign in or register to submit content and receive performance rewards.");
+      return;
+    }
 
     if (!contentUrl.trim() || !creatorHandle.trim()) {
       setError("Please provide your social handle and published video link.");
@@ -41,43 +68,28 @@ export function CampaignApplyModal({
     try {
       const res = await fetch("/api/submissions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           campaignId,
           platform,
-          contentUrl,
-          creatorHandle,
+          contentUrl: contentUrl.trim(),
+          creatorHandle: creatorHandle.trim(),
           estimatedViews: parseInt(estimatedViews) || 0,
         }),
       });
 
+      const data = await res.json().catch(() => ({}));
+
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.message || "Failed to submit content.");
+        throw new Error(data.message || data.error || "Failed to submit content to database.");
       }
 
       setIsSuccess(true);
     } catch (err: any) {
-      // In static / offline demo fallback, save to localStorage
-      try {
-        const stored = JSON.parse(localStorage.getItem("collabefy_submissions") || "[]");
-        stored.unshift({
-          id: `sub-${Date.now()}`,
-          campaignId,
-          campaignTitle,
-          platform,
-          contentUrl,
-          creatorHandle,
-          status: "pending",
-          submittedAt: new Date().toISOString(),
-          viewsVerified: 0,
-          rewardEarned: 0,
-        });
-        localStorage.setItem("collabefy_submissions", JSON.stringify(stored));
-        setIsSuccess(true);
-      } catch {
-        setError(err.message || "Submission failed. Please try again.");
-      }
+      setError(err.message || "Submission failed. Please verify that your account is active.");
     } finally {
       setIsSubmitting(false);
     }
@@ -89,6 +101,7 @@ export function CampaignApplyModal({
         onClick={() => {
           setIsOpen(true);
           setIsSuccess(false);
+          setError(null);
         }}
         className="w-full flex items-center justify-center gap-2 rounded-md bg-accent px-4 py-3 text-sm font-semibold text-accent-ink hover:opacity-95 transition-all shadow-sm"
       >
@@ -122,22 +135,58 @@ export function CampaignApplyModal({
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent/10 text-accent">
                   <CheckCircle2 className="w-7 h-7" />
                 </div>
-                <h4 className="text-base font-semibold text-text">Content Submitted Successfully</h4>
+                <h4 className="text-base font-semibold text-text">Content Submitted to Database</h4>
                 <p className="text-xs text-text-muted leading-relaxed max-w-xs mx-auto">
-                  Your clip has been queued for our 48-hour organic view audit. Once verified, performance earnings (
-                  {formatCurrency(rewardRate)}/1k views) will reflect on your Creator Dashboard.
+                  Your clip is recorded and queued for the 48-hour organic view audit. Once verified by our administrators, earnings (
+                  {formatCurrency(rewardRate)}/1k views) will be automatically credited to your creator balance.
                 </p>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="mt-3 rounded-md bg-accent px-4 py-2 text-xs font-semibold text-accent-ink hover:opacity-95"
-                >
-                  Close & View Dashboard
-                </button>
+                <div className="pt-2 flex justify-center gap-3">
+                  <Link
+                    href="/profile"
+                    className="rounded-md bg-accent px-4 py-2 text-xs font-semibold text-accent-ink hover:opacity-95 shadow"
+                  >
+                    View in Creator Workspace
+                  </Link>
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className="rounded-md border border-border bg-surface-1 px-4 py-2 text-xs font-medium text-text hover:bg-surface-3"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            ) : !isLoggedIn ? (
+              <div className="rounded-lg border border-border bg-surface-2 p-6 text-center space-y-4">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-surface-3 text-text-muted">
+                  <LogIn className="w-6 h-6 text-accent" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="text-base font-semibold text-text">Creator Sign-In Required</h4>
+                  <p className="text-xs text-text-muted max-w-xs mx-auto leading-relaxed">
+                    To ensure view audits are attributed to your account and earnings can be withdrawn, please sign in or register before submitting.
+                  </p>
+                </div>
+                <div className="flex justify-center gap-3 pt-2">
+                  <Link
+                    href={`/login?redirect=/campaigns`}
+                    className="flex items-center gap-1.5 rounded-md bg-accent px-4 py-2 text-xs font-semibold text-accent-ink hover:opacity-95 shadow"
+                  >
+                    <LogIn className="w-3.5 h-3.5" />
+                    <span>Sign In</span>
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="flex items-center gap-1.5 rounded-md border border-border bg-surface-1 px-4 py-2 text-xs font-medium text-text hover:bg-surface-3"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>Create Creator Account</span>
+                  </Link>
+                </div>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
                 {error && (
-                  <div className="flex items-center gap-2 rounded-md border border-danger/30 bg-danger/10 p-3 text-xs text-danger">
+                  <div className="flex items-center gap-2 rounded-md border border-danger/30 bg-danger/10 p-3 text-xs text-danger font-mono">
                     <AlertCircle className="w-4 h-4 shrink-0" />
                     <span>{error}</span>
                   </div>
@@ -170,7 +219,7 @@ export function CampaignApplyModal({
                 {/* Social handle */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-mono text-text-subtle uppercase">
-                    Your Creator Handle
+                    Your Creator Handle *
                   </label>
                   <input
                     type="text"
@@ -185,7 +234,7 @@ export function CampaignApplyModal({
                 {/* Published Video URL */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-mono text-text-subtle uppercase">
-                    Published Content / Post URL
+                    Published Content / Post URL *
                   </label>
                   <input
                     type="url"
@@ -197,13 +246,14 @@ export function CampaignApplyModal({
                   />
                 </div>
 
-                {/* Current Views (optional estimate) */}
+                {/* Current Views (estimate) */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-mono text-text-subtle uppercase">
                     Current View Count (at time of submission)
                   </label>
                   <input
                     type="number"
+                    min="0"
                     placeholder="e.g. 15000"
                     value={estimatedViews}
                     onChange={(e) => setEstimatedViews(e.target.value)}
@@ -222,10 +272,10 @@ export function CampaignApplyModal({
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex items-center gap-1.5 rounded-md bg-accent px-5 py-2 text-xs font-semibold text-accent-ink hover:opacity-95 transition-opacity disabled:opacity-50"
+                    className="flex items-center gap-1.5 rounded-md bg-accent px-5 py-2 text-xs font-semibold text-accent-ink hover:opacity-95 transition-opacity disabled:opacity-50 shadow"
                   >
                     <Send className="w-3.5 h-3.5" />
-                    <span>{isSubmitting ? "Submitting..." : "Submit Content"}</span>
+                    <span>{isSubmitting ? "Submitting to Database..." : "Submit for 48h Audit"}</span>
                   </button>
                 </div>
               </form>
@@ -236,4 +286,3 @@ export function CampaignApplyModal({
     </>
   );
 }
-

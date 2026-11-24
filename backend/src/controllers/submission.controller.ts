@@ -12,8 +12,13 @@ export async function createSubmission(req: Request, res: Response): Promise<voi
 
   const data = submissionCreateSchema.parse(req.body);
 
-  const campaign = await prisma.campaign.findUnique({
-    where: { id: data.campaignId },
+  const campaign = await prisma.campaign.findFirst({
+    where: {
+      OR: [
+        { id: data.campaignId },
+        { slug: data.campaignId },
+      ],
+    },
   });
 
   if (!campaign) {
@@ -31,7 +36,7 @@ export async function createSubmission(req: Request, res: Response): Promise<voi
 
   const submission = await prisma.contentSubmission.create({
     data: {
-      campaignId: data.campaignId,
+      campaignId: campaign.id,
       creatorId: req.user.userId,
       platform: data.platform,
       contentUrl: data.contentUrl,

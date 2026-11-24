@@ -1,13 +1,24 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { siteConfig } from "@/site.config";
 import { ArrowRight, AlertTriangle, ShieldAlert } from "lucide-react";
 
 const ADMIN_ROLES = ["SUPER_ADMIN", "ADMIN", "CAMPAIGN_MANAGER", "FINANCE_MANAGER", "SUPPORT_MANAGER"];
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-[80vh] flex items-center justify-center"><span className="text-xs font-mono text-text-subtle">Loading login portal...</span></div>}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/profile";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -73,7 +84,7 @@ export default function LoginPage() {
           // Clean up any stale admin token
           localStorage.removeItem("collabefy_admin_token");
 
-          window.location.href = "/profile";
+          window.location.href = redirectTo;
           return;
         }
       }

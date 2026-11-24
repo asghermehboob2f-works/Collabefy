@@ -49,6 +49,7 @@ export function CampaignDetailView({
   const payableViews = stats.payableViews ?? campaign.payableViews ?? campaign.verifiedViews ?? 0;
 
   const statusMap = {
+    draft: { label: "DRAFT", dotColor: "bg-text-subtle", canJoin: false },
     active: { label: "LIVE", dotColor: "bg-success", canJoin: true },
     upcoming: { label: "UPCOMING", dotColor: "bg-warning", canJoin: false },
     paused: { label: "PAUSED", dotColor: "bg-text-subtle", canJoin: false },

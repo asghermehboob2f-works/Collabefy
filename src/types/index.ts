@@ -1,4 +1,5 @@
 export type CampaignStatus =
+  | "draft"
   | "active"
   | "upcoming"
   | "paused"

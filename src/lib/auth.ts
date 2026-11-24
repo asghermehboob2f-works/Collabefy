@@ -1,6 +1,8 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
+const BACKEND_URL = process.env.BACKEND_INTERNAL_URL || "http://localhost:4000";
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -14,33 +16,41 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const email = credentials.email.toLowerCase();
+        try {
+          // Strictly authenticate against the real backend database with bcrypt password verification
+          const res = await fetch(`${BACKEND_URL}/api/v1/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: credentials.email.trim().toLowerCase(),
+              password: credentials.password,
+            }),
+          });
 
-        // Administrator account
-        if (email.includes("admin") || email === "admin@collabefy.com") {
-          return {
-            id: "usr-admin-1",
-            name: "Elena Rostova",
-            email: "admin@collabefy.com",
-            role: "ADMIN",
-            image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80",
-          };
+          if (res.ok) {
+            const data = await res.json();
+            const user = data.data?.user;
+            if (user && user.status === "ACTIVE") {
+              return {
+                id: user.id,
+                name: user.creatorProfile?.displayName || user.brandProfile?.companyName || user.email.split("@")[0],
+                email: user.email,
+                role: user.role,
+                image: user.creatorProfile?.avatarUrl || user.brandProfile?.logoUrl || null,
+              };
+            }
+          }
+        } catch (err) {
+          console.error("[NEXTAUTH_AUTHORIZE_ERROR]", err);
         }
 
-        // Creator account
-        return {
-          id: "usr-creator-1",
-          name: email.split("@")[0],
-          email: email,
-          role: "CREATOR",
-          image: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
-        };
+        return null;
       },
     }),
   ],
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60,
+    maxAge: 7 * 24 * 60 * 60, // 7 days
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -64,4 +74,3 @@ export const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET || "collabefy-production-secret-encryption-key-2026",
 };
-
