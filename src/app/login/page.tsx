@@ -4,7 +4,7 @@ import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { siteConfig } from "@/site.config";
-import { ArrowRight, AlertTriangle, ShieldAlert } from "lucide-react";
+import { ArrowRight, AlertTriangle } from "lucide-react";
 
 const ADMIN_ROLES = ["SUPER_ADMIN", "ADMIN", "CAMPAIGN_MANAGER", "FINANCE_MANAGER", "SUPPORT_MANAGER"];
 
@@ -189,15 +189,6 @@ function LoginForm() {
               Join as Creator
             </Link>
           </div>
-        </div>
-
-        {/* Administrator Portal Notice */}
-        <div className="rounded-lg border border-border/60 bg-surface-2/40 p-3.5 text-center text-xs font-mono text-text-subtle">
-          <span>Are you platform staff? </span>
-          <Link href="/admin/login" className="text-accent hover:underline inline-flex items-center gap-1 font-semibold">
-            <ShieldAlert className="w-3.5 h-3.5" />
-            <span>Admin Portal</span>
-          </Link>
         </div>
       </div>
     </div>
