@@ -14,6 +14,23 @@ const server = app.listen(config.port, () => {
   console.log(`===============================================`);
 });
 
+server.on("error", (err: any) => {
+  if (err.code === "EADDRINUSE") {
+    console.error(`\n❌ [PORT CONFLICT] Port ${config.port} is already in use by another process.`);
+    console.error(`👉 Close the process currently occupying port ${config.port} or restart your terminal.`);
+  } else {
+    console.error(`\n❌ Server listener error:`, err);
+  }
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("\n💥 [CRITICAL] Uncaught Exception:", err);
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("\n💥 [CRITICAL] Unhandled Promise Rejection:", reason);
+});
+
 // Graceful shutdown handling
 const signals: NodeJS.Signals[] = ["SIGINT", "SIGTERM"];
 
