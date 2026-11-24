@@ -13,8 +13,9 @@ import {
 import { registerSchema, loginSchema, updateProfileSchema } from "../validators/auth.validator.js";
 import { logAdminActivity } from "../middleware/auditLogger.js";
 
-export async function register(req: Request, res: Response): Promise<void> {
-  const data = registerSchema.parse(req.body);
+export async function register(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const data = registerSchema.parse(req.body);
 
   if (data.passwordConfirmation && data.password !== data.passwordConfirmation) {
     res.status(400).json({
@@ -121,6 +122,9 @@ export async function register(req: Request, res: Response): Promise<void> {
       accessToken,
     },
   });
+  } catch (err) {
+    next(err);
+  }
 }
 
 export async function login(req: Request, res: Response, next: NextFunction): Promise<void> {

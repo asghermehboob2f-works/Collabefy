@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { prisma } from "../database/prisma.js";
 import {
   discordSubmissionSchema,
@@ -15,8 +15,9 @@ export function normalizeDiscordUsername(username: string): string {
 }
 
 // 1. Public: Submit or Update Discord Creator Submission (Versioned)
-export async function submitDiscord(req: Request, res: Response): Promise<void> {
-  const data = discordSubmissionSchema.parse(req.body);
+export async function submitDiscord(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const data = discordSubmissionSchema.parse(req.body);
   const normalized = normalizeDiscordUsername(data.discordUsername);
   const ip = (req.headers["x-forwarded-for"] as string) || req.socket.remoteAddress || "client-ip";
 
@@ -126,6 +127,9 @@ export async function submitDiscord(req: Request, res: Response): Promise<void> 
       isUpdate: false,
     },
   });
+  } catch (err) {
+    next(err);
+  }
 }
 
 // 2. Admin: Get all Discord Submissions with pagination, filtering & search

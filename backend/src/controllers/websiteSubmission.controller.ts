@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { prisma } from "../database/prisma.js";
 import {
   websiteSubmissionSchema,
@@ -7,8 +7,9 @@ import {
 import { logAdminActivity } from "../middleware/auditLogger.js";
 
 // 1. Creator: Submit or Update Own Website Creator Profile (Versioned)
-export async function submitWebsiteCreatorProfile(req: Request, res: Response): Promise<void> {
-  if (!req.user) {
+export async function submitWebsiteCreatorProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    if (!req.user) {
     res.status(401).json({ success: false, error: { code: "UNAUTHORIZED", message: "Authentication required" } });
     return;
   }
@@ -116,6 +117,9 @@ export async function submitWebsiteCreatorProfile(req: Request, res: Response): 
     message: "Creator profile submitted successfully!",
     data: full,
   });
+  } catch (err) {
+    next(err);
+  }
 }
 
 // 2. Creator: Get My Submission Details & Versions

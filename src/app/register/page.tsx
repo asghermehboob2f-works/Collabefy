@@ -54,7 +54,7 @@ export default function RegisterPage() {
 
         if (!errorMsg) {
           if (res.status >= 500) {
-            errorMsg = "Backend API server (port 4000) is offline or unreachable. Please start it using 'npm run dev' or 'npm run dev:backend'.";
+            errorMsg = "Server is currently unavailable. Please try again in a few moments.";
           } else {
             errorMsg = "Registration failed. Please check your details.";
           }
@@ -78,7 +78,7 @@ export default function RegisterPage() {
 
       window.location.href = "/profile";
     } catch {
-      setError("Unable to connect to registration server. Please try again.");
+      setError("Server is currently unavailable. Please check your connection or try again shortly.");
       setRegistered(false);
     }
   };
