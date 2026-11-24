@@ -45,7 +45,15 @@ function LoginForm() {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        setError(data?.error?.message || "Invalid email or password");
+        let errorMsg = data?.error?.message;
+        if (!errorMsg) {
+          if (res.status >= 500) {
+            errorMsg = "Backend API server (port 4000) is offline or unreachable. Please start it using 'npm run dev' or 'npm run dev:backend'.";
+          } else {
+            errorMsg = "Invalid email, username, or password";
+          }
+        }
+        setError(errorMsg);
         setIsLoading(false);
         return;
       }

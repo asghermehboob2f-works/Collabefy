@@ -48,10 +48,18 @@ export default function RegisterPage() {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        const errorMsg =
+        let errorMsg =
           data?.error?.details?.map((d: any) => d.message).join(". ") ||
-          data?.error?.message ||
-          "Registration failed. Please check your details.";
+          data?.error?.message;
+
+        if (!errorMsg) {
+          if (res.status >= 500) {
+            errorMsg = "Backend API server (port 4000) is offline or unreachable. Please start it using 'npm run dev' or 'npm run dev:backend'.";
+          } else {
+            errorMsg = "Registration failed. Please check your details.";
+          }
+        }
+
         setError(errorMsg);
         setRegistered(false);
         return;
