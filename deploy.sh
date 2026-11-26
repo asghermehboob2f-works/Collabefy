@@ -3,7 +3,7 @@ set -e
 
 echo "🚀 [Collabefy] Starting deployment..."
 
-# Ensure NVM / Node environment is loaded if using NVM
+# Ensure NVM / Node environment is loaded
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
@@ -13,7 +13,14 @@ cd "$(dirname "$0")"
 echo "📥 Pulling latest code from origin main..."
 git pull origin main
 
-# 2. Install dependencies
+# 2. Deploy .htaccess to root, public, and parent web directory
+if [ -f .htaccess ]; then
+  echo "🌐 Ensuring reverse proxy .htaccess is active..."
+  cp -f .htaccess ../.htaccess 2>/dev/null || true
+  cp -f .htaccess public/.htaccess 2>/dev/null || true
+fi
+
+# 3. Install dependencies
 echo "📦 Installing root dependencies..."
 npm install --no-audit
 
@@ -25,14 +32,15 @@ node node_modules/prisma/build/index.js db push
 node node_modules/typescript/bin/tsc
 cd ..
 
-# 3. Build Next.js frontend
+# 4. Build Next.js frontend
 echo "🏗️ Building Next.js frontend..."
 node node_modules/next/dist/bin/next build
 
-# 4. Restart / Reload PM2 services if active
+# 5. Restart / Reload PM2 services using ecosystem.config.cjs
 if command -v pm2 &> /dev/null; then
   echo "🔄 Reloading PM2 processes..."
-  pm2 reload all || pm2 restart all || true
+  pm2 reload ecosystem.config.cjs 2>/dev/null || pm2 restart ecosystem.config.cjs 2>/dev/null || pm2 start ecosystem.config.cjs
+  pm2 save 2>/dev/null || true
 fi
 
 echo "✅ [Collabefy] Deployment completed successfully!"

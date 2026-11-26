@@ -1,0 +1,26 @@
+# ==============================================================================
+# Collabefy Reverse Proxy Configuration (.htaccess)
+# Routes all public domain traffic to the Next.js production server (Port 3000)
+# ==============================================================================
+
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+
+# Pass Authorization Header to Next.js and Express API
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+# Allow ACME Challenge for Let's Encrypt SSL Certificates
+RewriteCond %{REQUEST_URI} ^/\.well-known/acme-challenge/
+RewriteRule ^ - [L]
+
+# Reverse Proxy all incoming traffic to Next.js running on Port 3000
+RewriteRule ^(.*)$ http://127.0.0.1:3000/$1 [P,L]
+</IfModule>
+
+# Fallback for standard Apache / LiteSpeed mod_proxy
+<IfModule mod_proxy.c>
+ProxyPreserveHost On
+ProxyPass / http://127.0.0.1:3000/
+ProxyPassReverse / http://127.0.0.1:3000/
+</IfModule>
