@@ -4,13 +4,14 @@
   "description": "Collabefy Independent Production Backend API",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "dev": "node node_modules/tsx/dist/cli.mjs watch src/server.ts",
+    "build": "node node_modules/typescript/bin/tsc",
     "start": "node dist/server.js",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:deploy": "prisma migrate deploy",
-    "prisma:seed": "tsx prisma/seed.ts",
+    "prisma:generate": "node node_modules/prisma/build/index.js generate",
+    "prisma:migrate": "node node_modules/prisma/build/index.js migrate dev",
+    "prisma:deploy": "node node_modules/prisma/build/index.js migrate deploy",
+    "prisma:push": "node node_modules/prisma/build/index.js db push",
+    "prisma:seed": "node node_modules/tsx/dist/cli.mjs prisma/seed.ts",
     "test": "node --test --test-concurrency=1 --import tsx tests/**/*.test.ts"
   },
   "dependencies": {
