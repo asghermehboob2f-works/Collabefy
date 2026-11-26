@@ -3,6 +3,8 @@
 # Routes all public domain traffic to the Next.js production server (Port 3000)
 # ==============================================================================
 
+DirectoryIndex index.php index.html
+
 <IfModule mod_rewrite.c>
 RewriteEngine On
 RewriteBase /
@@ -14,8 +16,12 @@ RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 RewriteCond %{REQUEST_URI} ^/\.well-known/acme-challenge/
 RewriteRule ^ - [L]
 
-# Reverse Proxy all incoming traffic to Next.js running on Port 3000
+# Try native reverse proxy rule first (if mod_proxy is supported)
 RewriteRule ^(.*)$ http://127.0.0.1:3000/$1 [P,L]
+
+# Universal Fallback: If native proxy is not supported by LiteSpeed container, route via index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^(.*)$ index.php [QSA,L]
 </IfModule>
 
 # Fallback for standard Apache / LiteSpeed mod_proxy

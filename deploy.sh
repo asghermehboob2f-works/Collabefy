@@ -13,11 +13,14 @@ cd "$(dirname "$0")"
 echo "📥 Pulling latest code from origin main..."
 git pull origin main
 
-# 2. Deploy .htaccess to root, public, and parent web directory
-if [ -f .htaccess ]; then
-  echo "🌐 Ensuring reverse proxy .htaccess is active..."
-  cp -f .htaccess ../.htaccess 2>/dev/null || true
-  cp -f .htaccess public/.htaccess 2>/dev/null || true
+# 2. Deploy .htaccess and index.php reverse proxy to web root and parent directory
+echo "🌐 Ensuring reverse proxy (.htaccess & index.php) is active in web root..."
+cp -f .htaccess ../.htaccess 2>/dev/null || true
+cp -f index.php ../index.php 2>/dev/null || true
+
+if [ -d ../public_html ]; then
+  cp -f .htaccess ../public_html/.htaccess 2>/dev/null || true
+  cp -f index.php ../public_html/index.php 2>/dev/null || true
 fi
 
 # 3. Install dependencies
