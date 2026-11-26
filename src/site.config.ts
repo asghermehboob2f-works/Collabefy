@@ -12,6 +12,8 @@ export interface SiteConfig {
     twitter: string;
     github: string;
     documentation: string;
+    instagram?: string;
+    youtube?: string;
   };
   stats: {
     cacheSeconds: number;
@@ -38,6 +40,8 @@ export const siteConfig: SiteConfig = {
     twitter: "https://x.com/collabefy",
     github: "https://github.com/collabefy",
     documentation: "https://docs.collabefy.com",
+    instagram: "https://instagram.com/collabefy",
+    youtube: "https://youtube.com/@collabefy",
   },
   stats: {
     cacheSeconds: 60,
