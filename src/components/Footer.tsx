@@ -61,12 +61,12 @@ export function Footer() {
   return (
     <footer className="border-t border-white/5 bg-[#090A0C] text-text-muted pt-16 pb-12 font-sans selection:bg-accent selection:text-black">
       {/* ======================================================== */}
-      {/* 1. DESKTOP / PC MODE VIEW (Hidden on mobile, block on md+)*/}
+      {/* 1. DESKTOP / PC MODE VIEW (Full screen width edge-to-edge)*/}
       {/* ======================================================== */}
-      <div className="hidden md:block max-w-7xl mx-auto px-6 lg:px-8">
-        <div className="flex flex-col lg:flex-row justify-between items-start gap-10 lg:gap-14 pb-16">
-          {/* Brand Info & Socials */}
-          <div className="w-full lg:w-72 shrink-0 space-y-5">
+      <div className="hidden md:block w-full px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24">
+        <div className="flex flex-col lg:flex-row justify-between items-start gap-10 lg:gap-16 xl:gap-20 pb-16 w-full">
+          {/* Brand Info & Socials (Far Left) */}
+          <div className="w-full lg:w-80 xl:w-96 shrink-0 space-y-5">
             <Link href="/" className="group flex items-center gap-2.5">
               <img
                 src="/media/logo.png"
@@ -78,7 +78,7 @@ export function Footer() {
               </span>
             </Link>
 
-            <p className="text-sm text-text-muted leading-relaxed font-normal">
+            <p className="text-sm text-text-muted leading-relaxed font-normal max-w-sm">
               Where creators and top-tier brands connect — instantly. Your performance engine for next-generation campaigns.
             </p>
 
@@ -152,8 +152,8 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Navigation Columns (PRODUCT, COMPANY, LEGAL) */}
-          <div className="grid grid-cols-3 gap-8 sm:gap-12 lg:gap-16 flex-1 max-w-xl">
+          {/* Navigation Columns (PRODUCT, COMPANY, LEGAL - Spread out across center) */}
+          <div className="flex-1 grid grid-cols-3 gap-8 sm:gap-12 lg:gap-16 xl:gap-20 w-full">
             {/* PRODUCT */}
             <div className="space-y-3.5">
               <div className="text-xs font-mono font-semibold tracking-wider text-text-subtle uppercase">

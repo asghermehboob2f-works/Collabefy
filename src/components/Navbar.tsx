@@ -63,7 +63,7 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/[0.08] bg-[#090A0C]/85 backdrop-blur-md transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex h-14 items-center justify-between">
+      <div className="w-full px-6 sm:px-10 lg:px-16 xl:px-20 2xl:px-24 flex h-14 items-center justify-between">
 
         {/* Brand Logo & Wordmark + Desktop Nav Links */}
         <div className="flex items-center gap-7 lg:gap-9">
