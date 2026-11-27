@@ -20,25 +20,43 @@ export function createApp(): Express {
   );
 
   // 2. CORS configuration for production & local dev
-  const allowedOrigins = [
+  const allowedOriginsList = [
     config.frontendUrl,
+    process.env.FRONTEND_URL,
+    "https://collabefy.com",
+    "https://www.collabefy.com",
+    "http://collabefy.com",
+    "http://www.collabefy.com",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-  ];
+    "http://localhost:4000",
+    "http://127.0.0.1:4000",
+  ].filter(Boolean) as string[];
 
   app.use(
     cors({
       origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps, curl, or same-origin)
+        // Allow requests with no origin (like server-side fetch, mobile apps, or curl)
         if (!origin) return callback(null, true);
-        if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== "production") {
+
+        // Allow explicit list, any subdomain of collabefy.com, localhost, or vercel previews
+        const isAllowed =
+          allowedOriginsList.includes(origin) ||
+          /^https?:\/\/([a-zA-Z0-9-]+\.)*collabefy\.com(:[0-9]+)?$/.test(origin) ||
+          /^https?:\/\/([a-zA-Z0-9-]+\.)*vercel\.app$/.test(origin) ||
+          /^https?:\/\/(localhost|127\.0\.0\.1)(:[0-9]+)?$/.test(origin) ||
+          process.env.NODE_ENV !== "production";
+
+        if (isAllowed) {
           return callback(null, true);
         }
-        return callback(new Error("CORS policy violation"));
+
+        console.warn(`[CORS] Blocked request from origin: ${origin}`);
+        return callback(new Error(`CORS policy violation for origin ${origin}`));
       },
       credentials: true,
       methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+      allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
     })
   );
 

@@ -1,21 +1,37 @@
 // scripts/build.mjs
 // Thread-safe production builder for Next.js on resource-constrained containers (cgroups / shared hosting)
 
-import { spawn } from "node:child_process";
+import { spawn, execSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, "..");
+const backendDir = path.resolve(rootDir, "backend");
 
 console.log("\x1b[36m%s\x1b[0m", "==========================================================");
-console.log("\x1b[32m%s\x1b[0m", "   COLLABEFY NEXT.JS OPTIMIZED PRODUCTION BUILD           ");
+console.log("\x1b[32m%s\x1b[0m", "   COLLABEFY PRODUCTION BUILD (BACKEND + FRONTEND)        ");
 console.log("\x1b[36m%s\x1b[0m", "==========================================================");
 console.log("  Threads: Rayon=1, Libuv=1 (Cgroup safe)");
 console.log("  Memory:  Max 1536MB");
 console.log("\x1b[36m%s\x1b[0m", "==========================================================\n");
 
+// 1. Build Backend API Server
+console.log("⚙️  [1/2] Compiling Backend TypeScript (backend/dist)...");
+try {
+  execSync("node node_modules/typescript/bin/tsc -p tsconfig.json", {
+    cwd: backendDir,
+    stdio: "inherit",
+  });
+  console.log("✅ Backend compiled successfully.\n");
+} catch (err) {
+  console.error("❌ Backend TypeScript compilation failed.");
+  process.exit(1);
+}
+
+// 2. Build Next.js Frontend
+console.log("🏗️  [2/2] Building Next.js Frontend...");
 // Force single-thread parallelism so SWC / Rayon never exceeds container PID/thread limits
 const env = {
   ...process.env,
