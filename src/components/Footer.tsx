@@ -13,11 +13,10 @@ import {
   Github,
   Send,
   CheckCircle2,
-  Sparkles,
 } from "lucide-react";
 
 export function Footer() {
-  // State for collapsible accordion sections (defaulting with LEGAL open to match reference)
+  // Mobile accordion state (defaulting with LEGAL open to match reference)
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     PRODUCT: false,
     COMPANY: false,
@@ -26,7 +25,9 @@ export function Footer() {
   });
 
   const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [desktopEmail, setDesktopEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
+  const [desktopSubscribed, setDesktopSubscribed] = useState(false);
 
   const toggleSection = (section: string) => {
     setOpenSections((prev) => ({
@@ -35,7 +36,7 @@ export function Footer() {
     }));
   };
 
-  const handleSubscribe = (e: React.FormEvent) => {
+  const handleMobileSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
     if (newsletterEmail.trim()) {
       setSubscribed(true);
@@ -46,9 +47,279 @@ export function Footer() {
     }
   };
 
+  const handleDesktopSubscribe = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (desktopEmail.trim()) {
+      setDesktopSubscribed(true);
+      setTimeout(() => {
+        setDesktopEmail("");
+        setDesktopSubscribed(false);
+      }, 4000);
+    }
+  };
+
   return (
     <footer className="border-t border-white/5 bg-[#090A0C] text-text-muted pt-16 pb-12 font-sans selection:bg-accent selection:text-black">
-      <div className="max-w-xl mx-auto px-4 sm:px-6 space-y-8">
+      {/* ======================================================== */}
+      {/* 1. DESKTOP / PC MODE VIEW (Hidden on mobile, block on md+)*/}
+      {/* ======================================================== */}
+      <div className="hidden md:block max-w-7xl mx-auto px-6 lg:px-8">
+        <div className="flex flex-col lg:flex-row justify-between items-start gap-10 lg:gap-14 pb-16">
+          {/* Brand Info & Socials */}
+          <div className="w-full lg:w-72 shrink-0 space-y-5">
+            <Link href="/" className="inline-flex items-center gap-3 group">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-white/20 to-white/5 border border-white/20 flex items-center justify-center p-1.5 shadow-sm group-hover:border-accent/50 transition-colors">
+                <img
+                  src="/media/logo.png"
+                  alt={siteConfig.name}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <span className="font-extrabold text-xl tracking-wider text-white uppercase font-mono">
+                {siteConfig.name}
+              </span>
+            </Link>
+
+            <p className="text-sm text-text-muted leading-relaxed font-normal">
+              Where creators and top-tier brands connect — instantly. Your performance engine for next-generation campaigns.
+            </p>
+
+            {/* Social Icons Row */}
+            <div className="flex items-center gap-2 pt-1">
+              {/* Instagram */}
+              <a
+                href={siteConfig.links.instagram || "https://instagram.com"}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
+                className="w-9 h-9 rounded-lg border border-white/10 bg-[#131417] hover:bg-[#1C1E22] hover:border-white/25 hover:text-white flex items-center justify-center text-text-muted transition-all duration-200 shadow-sm"
+              >
+                <Instagram className="w-4 h-4" />
+              </a>
+
+              {/* Discord */}
+              <a
+                href={siteConfig.links.discord}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Discord Community"
+                className="w-9 h-9 rounded-lg border border-white/10 bg-[#131417] hover:bg-[#1C1E22] hover:border-white/25 hover:text-white flex items-center justify-center text-text-muted transition-all duration-200 shadow-sm"
+              >
+                <PlatformIcon platform="discord" className="w-4 h-4" />
+              </a>
+
+              {/* X */}
+              <a
+                href={siteConfig.links.twitter || "https://x.com"}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="X (Twitter)"
+                className="w-9 h-9 rounded-lg border border-white/10 bg-[#131417] hover:bg-[#1C1E22] hover:border-white/25 hover:text-white flex items-center justify-center text-text-muted transition-all duration-200 shadow-sm"
+              >
+                <PlatformIcon platform="x" className="w-4 h-4" />
+              </a>
+
+              {/* LinkedIn */}
+              <a
+                href="https://linkedin.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="LinkedIn"
+                className="w-9 h-9 rounded-lg border border-white/10 bg-[#131417] hover:bg-[#1C1E22] hover:border-white/25 hover:text-white flex items-center justify-center text-text-muted transition-all duration-200 shadow-sm"
+              >
+                <Linkedin className="w-4 h-4" />
+              </a>
+
+              {/* YouTube */}
+              <a
+                href={siteConfig.links.youtube || "https://youtube.com"}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="YouTube"
+                className="w-9 h-9 rounded-lg border border-white/10 bg-[#131417] hover:bg-[#1C1E22] hover:border-white/25 hover:text-white flex items-center justify-center text-text-muted transition-all duration-200 shadow-sm"
+              >
+                <Youtube className="w-4 h-4" />
+              </a>
+
+              {/* GitHub */}
+              <a
+                href={siteConfig.links.github}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="GitHub"
+                className="w-9 h-9 rounded-lg border border-white/10 bg-[#131417] hover:bg-[#1C1E22] hover:border-white/25 hover:text-white flex items-center justify-center text-text-muted transition-all duration-200 shadow-sm"
+              >
+                <Github className="w-4 h-4" />
+              </a>
+            </div>
+          </div>
+
+          {/* Navigation Columns (PRODUCT, COMPANY, LEGAL) */}
+          <div className="grid grid-cols-3 gap-8 sm:gap-12 lg:gap-16 flex-1 max-w-xl">
+            {/* PRODUCT */}
+            <div className="space-y-3.5">
+              <div className="text-xs font-mono font-semibold tracking-wider text-text-subtle uppercase">
+                PRODUCT
+              </div>
+              <ul className="space-y-2.5 text-xs font-normal">
+                <li>
+                  <Link href="/campaigns" className="text-text-muted hover:text-white transition-colors">
+                    Demo
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/leaderboard" className="text-text-muted hover:text-white transition-colors">
+                    Spotlight
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/how-it-works" className="text-text-muted hover:text-white transition-colors">
+                    Features
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/profile" className="text-text-muted hover:text-white transition-colors">
+                    Platform
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/community" className="text-text-muted hover:text-white transition-colors">
+                    Community
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/how-it-works#workflow" className="text-text-muted hover:text-white transition-colors">
+                    Workflow
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/campaigns#pricing" className="text-text-muted hover:text-white transition-colors">
+                    Pricing
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/faq" className="text-text-muted hover:text-white transition-colors">
+                    FAQ
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/about#stories" className="text-text-muted hover:text-white transition-colors">
+                    Stories
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* COMPANY */}
+            <div className="space-y-3.5">
+              <div className="text-xs font-mono font-semibold tracking-wider text-text-subtle uppercase">
+                COMPANY
+              </div>
+              <ul className="space-y-2.5 text-xs font-normal">
+                <li>
+                  <Link href="/about" className="text-text-muted hover:text-white transition-colors">
+                    About
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/contact" className="text-text-muted hover:text-white transition-colors">
+                    Contact
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/about#engineering" className="text-text-muted hover:text-white transition-colors">
+                    Engineering
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/contact#careers" className="text-text-muted hover:text-white transition-colors">
+                    Careers
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/faq#brands" className="text-text-muted hover:text-white transition-colors">
+                    FAQ
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* LEGAL */}
+            <div className="space-y-3.5">
+              <div className="text-xs font-mono font-semibold tracking-wider text-text-subtle uppercase">
+                LEGAL
+              </div>
+              <ul className="space-y-2.5 text-xs font-normal">
+                <li>
+                  <Link href="/privacy" className="text-text-muted hover:text-white transition-colors">
+                    Privacy Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/terms" className="text-text-muted hover:text-white transition-colors">
+                    Terms of Service
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/privacy#cookies" className="text-text-muted hover:text-white transition-colors">
+                    Cookie Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/terms#licenses" className="text-text-muted hover:text-white transition-colors">
+                    Licenses
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* NEWSLETTER Column */}
+          <div className="w-full lg:w-80 shrink-0 space-y-3">
+            <div className="text-xs font-mono font-semibold tracking-wider text-text-subtle uppercase">
+              NEWSLETTER
+            </div>
+            <p className="text-xs text-text-muted leading-relaxed font-normal">
+              Product drops and creative tips — no spam.
+            </p>
+
+            {desktopSubscribed ? (
+              <div className="flex items-center gap-2 text-accent py-2 text-xs font-mono">
+                <CheckCircle2 className="w-4 h-4" />
+                <span>You're subscribed! Keep an eye on your inbox.</span>
+              </div>
+            ) : (
+              <form onSubmit={handleDesktopSubscribe} className="flex items-center gap-2 pt-1">
+                <input
+                  type="email"
+                  required
+                  value={desktopEmail}
+                  onChange={(e) => setDesktopEmail(e.target.value)}
+                  placeholder="you@studio.com"
+                  className="flex-1 rounded-lg border border-white/10 bg-[#131417] px-3.5 py-2 text-xs text-white placeholder:text-text-subtle/60 focus:border-cyan-400 focus:outline-none font-mono"
+                />
+                <button
+                  type="submit"
+                  className="rounded-lg bg-gradient-to-r from-blue-500 to-cyan-400 px-4 py-2 text-xs font-semibold text-white hover:opacity-95 transition-all shadow-[0_0_18px_rgba(59,130,246,0.35)] shrink-0"
+                >
+                  Subscribe
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+
+        {/* Desktop Bottom Bar */}
+        <div className="pt-8 border-t border-white/5 flex items-center justify-between text-xs text-text-subtle font-normal">
+          <p>© {new Date().getFullYear()} {siteConfig.name.toUpperCase()}. All rights reserved.</p>
+          <p className="text-text-subtle/80">Engineered for motion, stills, and imagination.</p>
+        </div>
+      </div>
+
+      {/* ======================================================== */}
+      {/* 2. MOBILE MODE VIEW (Preserved exactly as requested)     */}
+      {/* ======================================================== */}
+      <div className="md:hidden max-w-xl mx-auto px-4 sm:px-6 space-y-8">
         {/* Brand Header */}
         <div className="space-y-4">
           <Link href="/" className="inline-flex items-center gap-3 group">
@@ -117,7 +388,7 @@ export function Footer() {
 
           {/* YouTube */}
           <a
-            href="https://youtube.com"
+            href={siteConfig.links.youtube || "https://youtube.com"}
             target="_blank"
             rel="noopener noreferrer"
             aria-label="YouTube"
@@ -161,15 +432,7 @@ export function Footer() {
                     href="/campaigns"
                     className="text-text hover:text-accent transition-colors block"
                   >
-                    Browse Campaigns
-                  </Link>
-                </div>
-                <div>
-                  <Link
-                    href="/profile"
-                    className="text-text hover:text-accent transition-colors block"
-                  >
-                    Creator Portal & Earnings
+                    Demo
                   </Link>
                 </div>
                 <div>
@@ -177,7 +440,7 @@ export function Footer() {
                     href="/leaderboard"
                     className="text-text hover:text-accent transition-colors block"
                   >
-                    Performance Leaderboard
+                    Spotlight
                   </Link>
                 </div>
                 <div>
@@ -185,7 +448,55 @@ export function Footer() {
                     href="/how-it-works"
                     className="text-text hover:text-accent transition-colors block"
                   >
-                    How It Works & CPM Rates
+                    Features
+                  </Link>
+                </div>
+                <div>
+                  <Link
+                    href="/profile"
+                    className="text-text hover:text-accent transition-colors block"
+                  >
+                    Platform
+                  </Link>
+                </div>
+                <div>
+                  <Link
+                    href="/community"
+                    className="text-text hover:text-accent transition-colors block"
+                  >
+                    Community
+                  </Link>
+                </div>
+                <div>
+                  <Link
+                    href="/how-it-works#workflow"
+                    className="text-text hover:text-accent transition-colors block"
+                  >
+                    Workflow
+                  </Link>
+                </div>
+                <div>
+                  <Link
+                    href="/campaigns#pricing"
+                    className="text-text hover:text-accent transition-colors block"
+                  >
+                    Pricing
+                  </Link>
+                </div>
+                <div>
+                  <Link
+                    href="/faq"
+                    className="text-text hover:text-accent transition-colors block"
+                  >
+                    FAQ
+                  </Link>
+                </div>
+                <div>
+                  <Link
+                    href="/about#stories"
+                    className="text-text hover:text-accent transition-colors block"
+                  >
+                    Stories
                   </Link>
                 </div>
               </div>
@@ -213,15 +524,7 @@ export function Footer() {
                     href="/about"
                     className="text-text hover:text-accent transition-colors block"
                   >
-                    About Us
-                  </Link>
-                </div>
-                <div>
-                  <Link
-                    href="/community"
-                    className="text-text hover:text-accent transition-colors block"
-                  >
-                    Creator Community
+                    About
                   </Link>
                 </div>
                 <div>
@@ -229,15 +532,31 @@ export function Footer() {
                     href="/contact"
                     className="text-text hover:text-accent transition-colors block"
                   >
-                    Brand Partnerships & Support
+                    Contact
                   </Link>
                 </div>
                 <div>
                   <Link
-                    href="/faq"
+                    href="/about#engineering"
                     className="text-text hover:text-accent transition-colors block"
                   >
-                    FAQ & Payout Rules
+                    Engineering
+                  </Link>
+                </div>
+                <div>
+                  <Link
+                    href="/contact#careers"
+                    className="text-text hover:text-accent transition-colors block"
+                  >
+                    Careers
+                  </Link>
+                </div>
+                <div>
+                  <Link
+                    href="/faq#brands"
+                    className="text-text hover:text-accent transition-colors block"
+                  >
+                    FAQ
                   </Link>
                 </div>
               </div>
@@ -313,7 +632,7 @@ export function Footer() {
             {openSections.NEWSLETTER && (
               <div className="pt-3 pb-2 space-y-3 pl-0.5 animate-fade-in text-xs">
                 <p className="text-text-muted leading-relaxed">
-                  Receive curated campaign drops, bonus CPM spikes, and platform alerts directly in your inbox.
+                  Product drops and creative tips — no spam.
                 </p>
                 {subscribed ? (
                   <div className="flex items-center gap-2 text-accent py-2 font-mono">
@@ -321,7 +640,7 @@ export function Footer() {
                     <span>You're subscribed! Keep an eye on your inbox.</span>
                   </div>
                 ) : (
-                  <form onSubmit={handleSubscribe} className="flex gap-2 pt-1">
+                  <form onSubmit={handleMobileSubscribe} className="flex gap-2 pt-1">
                     <input
                       type="email"
                       required
@@ -344,10 +663,10 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Bottom Copyright & Engineering note */}
+        {/* Mobile Bottom Copyright & Engineering note */}
         <div className="space-y-1.5 pt-2 text-xs text-text-subtle font-normal">
           <p>© {new Date().getFullYear()} {siteConfig.name.toUpperCase()}. All rights reserved.</p>
-          <p className="text-text-subtle/80">Engineered for creators, brands, and performance.</p>
+          <p className="text-text-subtle/80">Engineered for motion, stills, and imagination.</p>
         </div>
       </div>
     </footer>
