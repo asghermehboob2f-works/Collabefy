@@ -16,11 +16,11 @@ import {
 } from "lucide-react";
 
 export function Footer() {
-  // Mobile accordion state (defaulting with LEGAL open to match reference)
+  // Mobile accordion state (all sections minimized by default)
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     PRODUCT: false,
     COMPANY: false,
-    LEGAL: true,
+    LEGAL: false,
     NEWSLETTER: false,
   });
 
