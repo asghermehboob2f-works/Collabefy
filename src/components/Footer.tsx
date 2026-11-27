@@ -67,15 +67,13 @@ export function Footer() {
         <div className="flex flex-col lg:flex-row justify-between items-start gap-10 lg:gap-14 pb-16">
           {/* Brand Info & Socials */}
           <div className="w-full lg:w-72 shrink-0 space-y-5">
-            <Link href="/" className="inline-flex items-center gap-2.5 group">
-              <div className="w-8 h-8 rounded-full bg-[#18191E] border border-white/15 flex items-center justify-center p-1.5 shadow-sm group-hover:border-accent/40 transition-all">
-                <img
-                  src="/media/logo.png"
-                  alt={siteConfig.name}
-                  className="w-full h-full object-contain"
-                />
-              </div>
-              <span className="font-extrabold text-lg sm:text-xl tracking-wider text-white uppercase font-sans">
+            <Link href="/" className="group flex items-center gap-2.5">
+              <img
+                src="/media/logo.png"
+                alt={siteConfig.name}
+                className="h-8 w-8 rounded-md object-contain transition-transform group-hover:scale-105"
+              />
+              <span className="font-semibold text-lg tracking-tight text-text">
                 {siteConfig.name}
               </span>
             </Link>
@@ -322,15 +320,13 @@ export function Footer() {
       <div className="md:hidden max-w-xl mx-auto px-4 sm:px-6 space-y-8">
         {/* Brand Header */}
         <div className="space-y-4">
-          <Link href="/" className="inline-flex items-center gap-2.5 group">
-            <div className="w-8 h-8 rounded-full bg-[#18191E] border border-white/15 flex items-center justify-center p-1.5 shadow-sm group-hover:border-accent/40 transition-all">
-              <img
-                src="/media/logo.png"
-                alt={siteConfig.name}
-                className="w-full h-full object-contain"
-              />
-            </div>
-            <span className="font-extrabold text-lg sm:text-xl tracking-wider text-white uppercase font-sans">
+          <Link href="/" className="group flex items-center gap-2.5">
+            <img
+              src="/media/logo.png"
+              alt={siteConfig.name}
+              className="h-8 w-8 rounded-md object-contain transition-transform group-hover:scale-105"
+            />
+            <span className="font-semibold text-lg tracking-tight text-text">
               {siteConfig.name}
             </span>
           </Link>

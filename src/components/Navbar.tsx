@@ -68,16 +68,12 @@ export default function Navbar() {
         {/* Brand Logo & Wordmark + Desktop Nav Links */}
         <div className="flex items-center gap-7 lg:gap-9">
           <Link href="/" className="group flex items-center gap-2.5 shrink-0">
-            <div className="w-8 h-8 rounded-full bg-[#18191E] border border-white/15 flex items-center justify-center p-1.5 shadow-sm group-hover:border-accent/40 transition-all">
-              <img
-                src="/media/logo.png"
-                alt={siteConfig.name}
-                className="w-full h-full object-contain"
-              />
-            </div>
-            <span className="font-extrabold text-base tracking-wider text-white uppercase font-sans">
-              {siteConfig.name}
-            </span>
+            <img
+              src="/media/logo.png"
+              alt={siteConfig.name}
+              className="h-8 w-8 rounded-md object-contain transition-transform group-hover:scale-105"
+            />
+            <span className="font-semibold text-lg tracking-tight text-text">{siteConfig.name}</span>
           </Link>
 
           {/* Desktop Nav Links (Clean, slim horizontal menu) */}
