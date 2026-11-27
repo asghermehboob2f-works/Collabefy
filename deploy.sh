@@ -42,15 +42,16 @@ node node_modules/prisma/build/index.js db push
 node node_modules/typescript/bin/tsc
 cd ..
 
-# 4. Build Next.js frontend
+# 4. Build Next.js frontend (Thread-safe for shared hosting cgroups)
 echo "🏗️ Building Next.js frontend..."
-node node_modules/next/dist/bin/next build
+export RAYON_NUM_THREADS=1
+export UV_THREADPOOL_SIZE=1
+export NEXT_TELEMETRY_DISABLED=1
+export NODE_OPTIONS="--max-old-space-size=1536"
+node scripts/build.mjs
 
-# 5. Restart / Reload PM2 services using ecosystem.config.cjs
-if command -v pm2 &> /dev/null; then
-  echo "🔄 Reloading PM2 processes..."
-  pm2 reload ecosystem.config.cjs 2>/dev/null || pm2 restart ecosystem.config.cjs 2>/dev/null || pm2 start ecosystem.config.cjs
-  pm2 save 2>/dev/null || true
-fi
+# 5. Restart Collabefy services cleanly without port collisions
+echo "🔄 Restarting Collabefy services..."
+npm run restart
 
 echo "✅ [Collabefy] Deployment completed successfully!"

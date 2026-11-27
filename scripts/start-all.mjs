@@ -1,7 +1,7 @@
 // scripts/start-all.mjs
 // Single command production orchestrator for Collabefy (Backend Port 4000 + Frontend Port 3000)
 
-import { spawn } from "node:child_process";
+import { spawn, execSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -9,6 +9,29 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, "..");
 const backendDir = path.resolve(rootDir, "backend");
+
+function freePort(port) {
+  try {
+    if (process.platform === "win32") {
+      const stdout = execSync(`netstat -ano | findstr :${port}`, { encoding: "utf8" });
+      const lines = stdout.trim().split(/\r?\n/);
+      for (const line of lines) {
+        const parts = line.trim().split(/\s+/);
+        const pid = parts[parts.length - 1];
+        if (pid && pid !== "0" && pid !== String(process.pid)) {
+          try { execSync(`taskkill /F /PID ${pid} 2>nul`); } catch {}
+        }
+      }
+    } else {
+      try { execSync(`fuser -k ${port}/tcp 2>/dev/null || true`); } catch {}
+      try { execSync(`lsof -t -i:${port} | xargs -r kill -9 2>/dev/null || true`); } catch {}
+    }
+  } catch {}
+}
+
+// Clean any stale listeners on ports 3000 and 4000 before startup
+freePort(3000);
+freePort(4000);
 
 console.log("\x1b[36m%s\x1b[0m", "==========================================================");
 console.log("\x1b[32m%s\x1b[0m", "   COLLABEFY PRODUCTION ENVIRONMENT STARTING              ");
