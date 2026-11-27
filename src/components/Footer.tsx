@@ -67,15 +67,15 @@ export function Footer() {
         <div className="flex flex-col lg:flex-row justify-between items-start gap-10 lg:gap-14 pb-16">
           {/* Brand Info & Socials */}
           <div className="w-full lg:w-72 shrink-0 space-y-5">
-            <Link href="/" className="inline-flex items-center gap-3 group">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-white/20 to-white/5 border border-white/20 flex items-center justify-center p-1.5 shadow-sm group-hover:border-accent/50 transition-colors">
+            <Link href="/" className="inline-flex items-center gap-2.5 group">
+              <div className="w-8 h-8 rounded-full bg-[#18191E] border border-white/15 flex items-center justify-center p-1.5 shadow-sm group-hover:border-accent/40 transition-all">
                 <img
                   src="/media/logo.png"
                   alt={siteConfig.name}
                   className="w-full h-full object-contain"
                 />
               </div>
-              <span className="font-extrabold text-xl tracking-wider text-white uppercase font-mono">
+              <span className="font-extrabold text-lg sm:text-xl tracking-wider text-white uppercase font-sans">
                 {siteConfig.name}
               </span>
             </Link>
@@ -322,15 +322,15 @@ export function Footer() {
       <div className="md:hidden max-w-xl mx-auto px-4 sm:px-6 space-y-8">
         {/* Brand Header */}
         <div className="space-y-4">
-          <Link href="/" className="inline-flex items-center gap-3 group">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-white/20 to-white/5 border border-white/20 flex items-center justify-center p-1.5 shadow-sm group-hover:border-accent/50 transition-colors">
+          <Link href="/" className="inline-flex items-center gap-2.5 group">
+            <div className="w-8 h-8 rounded-full bg-[#18191E] border border-white/15 flex items-center justify-center p-1.5 shadow-sm group-hover:border-accent/40 transition-all">
               <img
                 src="/media/logo.png"
                 alt={siteConfig.name}
                 className="w-full h-full object-contain"
               />
             </div>
-            <span className="font-extrabold text-xl tracking-wider text-white uppercase font-mono">
+            <span className="font-extrabold text-lg sm:text-xl tracking-wider text-white uppercase font-sans">
               {siteConfig.name}
             </span>
           </Link>
